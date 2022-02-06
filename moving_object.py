@@ -1,6 +1,10 @@
 class MovingObject:
-    def __init__(self,x,y,type,map):
-        self.x,self.y,self.type,self.map=x,y,type,map
-    def move(self,dx,dy,map_width,map_height):
-        self.x=(self.x+dx)%map_width
+    def __init__(self,x,y,type):
+        self.x,self.y,self.type=x,y,type
+    def move(self,dx,dy):
+        self.x+=dx
         self.y+=dy
+    def setX(self,x): self.x=x
+    def setY(self,y): self.y=y
+    def getX(self): return self.x
+    def getY(self): return self.y
