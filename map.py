@@ -76,12 +76,14 @@ class Map:
                     x_new = x+dx
                     y_new = y+dy
                     if self.check_A(x,y):
-                        attract = True
-                        x+=np.sign(dx)
-                        y+=np.sign(dy)
-                        if self.check_position(x,y):
-                            obj.setX(x)
-                            obj.setY(y)
+                        # current object B has 60% chance to be attracted by A
+                        if random.random()<0.6:
+                            attract=True
+                            x+=np.sign(dx)
+                            y+=np.sign(dy)
+                            if self.check_position(x,y):
+                                obj.setX(x)
+                                obj.setY(y)
             # not attract implies there is no A in the neighbourhood of current B
             # then this object B just random walk
             if not attract:
