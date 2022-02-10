@@ -50,22 +50,19 @@ class Map:
 
         # first move objects A
         for obj in self.obj1:
-            dx = random.randint(-1,2)
-            dy = random.randint(-1,2) 
-            obj.move(dx,dy)
 
-            # obj_x = obj.getX()
-            # obj_y = obj.getY()
-            # # dx, dy are -1, 0 or 1
-            # dx = random.randint(-1,2)
-            # dy = random.randint(-1,2)
-            # obj_x += dx
-            # obj_y += dy
-            # # if the moving position is valid, then move
-            # # otherwise the object will keep still
-            # if self.check_position(obj_x,obj_y):
-            #     obj.setX(obj_x)
-            #     obj.setY(obj_y)
+            obj_x = obj.getX()
+            obj_y = obj.getY()
+            # dx, dy are -1, 0 or 1
+            dx = random.randint(-1,2)
+            dy = random.randint(-1,2)
+            obj_x += dx
+            obj_y += dy
+            # if the moving position is valid, then move
+            # otherwise the object will keep still
+            if self.check_position(obj_x,obj_y):
+                obj.setX(obj_x)
+                obj.setY(obj_y)
 
         # then move objects B
         for objj in self.obj2:
