@@ -30,11 +30,11 @@ class Map:
         else:
             return True
 
-    # a helper function to check whether certain position is occupied by any objects A
-    def check_A(self,x,y):
+    # a helper function to check whether certain position is occupied by any objects of certain type 
+    def check_occupy(self,x,y,objs):
         if not self.check_position(x,y):
             return False
-        for obj in self.obj1:
+        for obj in objs:
             obj_x = obj.getX()
             obj_y = obj.getY()
             if x == obj_x and y == obj_y:
@@ -46,7 +46,7 @@ class Map:
         # the moving stage consists of two parts
         # suppose type "A" objects will attract type "B" objects
         # Part 1: A will randomly walk around the map
-        #         B will randomly walk around the map unless there exists A objects nearby (3x3)
+        #         B will randomly walk around the map unless there exists A objects nearby (7x7)
 
         # first move objects A
         for obj in self.obj1:
@@ -76,7 +76,7 @@ class Map:
                         continue
                     x_new = x+dx
                     y_new = y+dy
-                    if self.check_A(x_new,y_new):
+                    if self.check_occupy(x_new,y_new,self.obj1):
                         # current object B has 60% chance to be attracted by A
                         if random.random()<0.6:
                             attract=True
@@ -105,6 +105,33 @@ class Map:
         # obj.move(dx,dy)
         # obj.setX(obj.getX()%self.width) # concatenate left and right sides
         # obj.setY(obj.getY()%self.height) # concatenate upper and lower sides
+
+    # a helper function to check whether the current object is in the sub-region
+    def in_subregion(self,corner_x, corner_y, length,x,y):
+        if x>=corner_x and x<=(corner_x+length):
+            if y>=corner_y and y<= (corner_y+length):
+                return True
+        return False
+
+
+        # return the objects in the sub-regions
+    def select_objs(self):
+        # left-top position of the selected sub-region
+        corner_x = int(self.width/4)
+        corner_y = int(self.height/4)
+        length = int(np.minimum(self.width,self.height)/3)
+        select_obj1 = []
+        select_obj2 = []
+        for obj in self.obj1:
+            if self.in_subregion(corner_x,corner_y,length,obj.getX(),obj.getY()):
+                select_obj1.append(obj)
+        for obj in self.obj2:
+            if self.in_subregion(corner_x,corner_y,length,obj.getX(),obj.getY()):
+                select_obj2.append(obj)
+        return select_obj1,select_obj2
+
+
+
         
 
 
