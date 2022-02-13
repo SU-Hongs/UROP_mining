@@ -1,6 +1,7 @@
 from moving_object import *
 import numpy as np
 import random
+from typing import List
 
 # here one map only has two types of objects
 # the size of map should be at least 10x10
@@ -21,6 +22,11 @@ class Map:
             y = random.randint(0,height)
             obj = MovingObject(x,y,"B")
             self.obj2.append(obj)
+
+    # return list of different types of objects    
+    def getObjects(self):
+        # assuming two types
+        return [self.obj1,self.obj2]
 
 
     # a helper function to check whether an object occupies an valid position
@@ -100,12 +106,6 @@ class Map:
                     obj.setY(y)
 
 
-                    
-        
-        # obj.move(dx,dy)
-        # obj.setX(obj.getX()%self.width) # concatenate left and right sides
-        # obj.setY(obj.getY()%self.height) # concatenate upper and lower sides
-
     # a helper function to check whether the current object is in the sub-region
     def in_subregion(self,corner_x, corner_y, length,x,y):
         if x>=corner_x and x<=(corner_x+length):
@@ -119,7 +119,7 @@ class Map:
         # left-top position of the selected sub-region
         corner_x = int(self.width/4)
         corner_y = int(self.height/4)
-        length = int(np.minimum(self.width,self.height)/3)
+        length = int(min(self.width,self.height)/3)
         select_obj1 = []
         select_obj2 = []
         for obj in self.obj1:
