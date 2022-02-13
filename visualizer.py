@@ -19,4 +19,5 @@ class Visualizer():
                 tt.setpos(obj.getX(),obj.getY())
                 tt.pendown()
                 tt.stamp()
+        tt.update()
         
