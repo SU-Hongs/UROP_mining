@@ -102,8 +102,8 @@ class Map:
                 # if the moving position is valid, then move
                 # otherwise the object will keep still
                 if self.check_position(x,y):
-                    obj.setX(x)
-                    obj.setY(y)
+                    objj.setX(x)
+                    objj.setY(y)
 
 
     # a helper function to check whether the current object is in the sub-region
