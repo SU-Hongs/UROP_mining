@@ -13,13 +13,13 @@ class Map:
         self.obj2 = []
         # x corresponds to width, y corresponds to height
         for i in range(num_1):
-            x = random.randint(0,width)
-            y = random.randint(0,height)
+            x = random.randint(0,width-1)
+            y = random.randint(0,height-1)
             obj = MovingObject(x,y,"A")
             self.obj1.append(obj)
         for i in range(num_2):
-            x = random.randint(0,width)
-            y = random.randint(0,height)
+            x = random.randint(0,width-1)
+            y = random.randint(0,height-1)
             obj = MovingObject(x,y,"B")
             self.obj2.append(obj)
 
@@ -60,8 +60,8 @@ class Map:
             obj_x = obj.getX()
             obj_y = obj.getY()
             # dx, dy are -1, 0 or 1
-            dx = random.randint(-1,2)
-            dy = random.randint(-1,2)
+            dx = random.randint(-1,1)
+            dy = random.randint(-1,1)
             obj_x += dx
             obj_y += dy
             # if the moving position is valid, then move
@@ -95,8 +95,8 @@ class Map:
             # then this object B just random walk
             if not attract:
                 # dx, dy are -1, 0 or 1
-                dx = random.randint(-1,2)
-                dy = random.randint(-1,2)
+                dx = random.randint(-1,1)
+                dy = random.randint(-1,1)
                 x += dx
                 y += dy
                 # if the moving position is valid, then move
