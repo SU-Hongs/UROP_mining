@@ -84,6 +84,17 @@ class Map():
                 /np.maximum(self.max_speeds[type1],np.linalg.norm(self.speeds[type1],axis=1,keepdims=True)+self.eps)
 
             updated_types.append(type1)
+        
+        # update unattracted types
+        for type in self.types:
+            if type not in updated_types:
+                num_type=self.populations[type]
+                # update speed by adding acceleration
+                self.speeds[type]+=self.max_accs[type]*np.random.rand(num_type,1)*self.random_unit_vectors(num_type)
+
+                # speed is clipped to max speed
+                self.speeds[type]=self.max_speeds[type]*self.speeds[type] \
+                    /np.maximum(self.max_speeds[type],np.linalg.norm(self.speeds[type],axis=1,keepdims=True)+self.eps)
             
         # update positions
         for type,s in self.speeds.items():
@@ -146,10 +157,10 @@ if __name__=='__main__':
     map_width,map_height=1000,800 # width and height of the map
     types=['A','B','C'] # A,B,C types of objects
     populations={types[i]:v for i,v in enumerate([100,110,90])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([2,2,2])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([1,1,1])} # max accelerations of different types
-    rules={('A','B'):80,('B','C'):100} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
-    rule_probs={('A','B'):0.5,('B','C'):0.6} # probabilities of attraction if within range
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
+    rules={('A','B'):50,('B','C'):30} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
+    rule_probs={('A','B'):0.5,('B','C'):0.7} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     n_iters=1000
