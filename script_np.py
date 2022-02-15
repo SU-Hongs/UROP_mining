@@ -98,11 +98,22 @@ class Map():
             
         # update positions
         for type,s in self.speeds.items():
+            
             pos=self.positions[type]
             pos+=s
+
+            # reverse the direction of speed when collision happens
+            mask=~((pos[:,0]>=0)*(pos[:,0]<=self.map_width))
+            s[mask,0]=-s[mask,0]
+            mask=~((pos[:,1]>=0)*(pos[:,1]<=self.map_height))
+            s[mask,1]=-s[mask,1]
+
             # clip position to value within map
-            pos[:,0]=np.clip(pos[:,0],0,self.map_width)
-            pos[:,1]=np.clip(pos[:,1],0,self.map_height)
+            
+            pos[:,0]+=2*(np.maximum(-pos[:,0],0)-np.maximum(pos[:,0]-self.map_width,0))
+            pos[:,1]+=2*(np.maximum(-pos[:,1],0)-np.maximum(pos[:,1]-self.map_height,0))
+            # pos[:,0]=np.clip(pos[:,0],0,self.map_width)
+            # pos[:,1]=np.clip(pos[:,1],0,self.map_height)
         
         # update distances
         self.update_distances()
@@ -157,7 +168,7 @@ if __name__=='__main__':
     map_width,map_height=1000,800 # width and height of the map
     types=['A','B','C'] # A,B,C types of objects
     populations={types[i]:v for i,v in enumerate([100,110,90])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
     rules={('A','B'):50,('B','C'):30} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
     rule_probs={('A','B'):0.5,('B','C'):0.7} # probabilities of attraction if within range
