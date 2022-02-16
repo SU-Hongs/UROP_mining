@@ -124,7 +124,7 @@ class Map():
         tt.colormode(1.0)
         tt.penup()
         tt.shapesize(0.3,0.3,0.3)
-        tt.shape(name='turtle')
+        tt.shape(name='circle')
         self.colors=cm.rainbow(np.linspace(0,1,len(types)))[:,:3]
         self.textTurtle=tt.Turtle()
         
@@ -160,6 +160,47 @@ class Map():
                 tt.stamp()
         tt.update()
 
+    # a function to select the objects in the targeted sub-region
+    # return a dictionary of the the colocation density of the colocation patterns 
+    # mode 1 stands for computing density for rules (i.e. at least a colocation pattern of size 2)
+    # mode 2 stands for computing density for individual types of objects
+    def compute_density(self, thres, mode):
+        # first select the index of the objects that is in the range of the targeted subregion
+        # define the left bottom corner of the sub-region and the length
+        lb_x = int(self.map_width/4)
+        lb_y = int(self.map_height/4)
+        length = int(np.minimum(self.map_height,self.map_width)/3)
+        area = (length^2)/100 # divided by 100 to make the density moderate
+        idx_dict = dict()
+        for type in self.types:
+            x, y = self.positions[type][:,0], self.positions[type][:,1]
+            idx = np.where((x>=lb_x) & (x<lb_x+length) & (y>=lb_y) & (y<lb_y+length))[0]
+            idx_dict[type] = idx
+
+        density_dict = dict()
+        # for mode 1
+        if mode == 1:
+            for rule in rules:
+                type, _=rule
+                curr_dist = self.distances[rule]
+                idx = idx_dict[type]
+                select_dist = curr_dist[idx]
+                select_dist = (select_dist<thres).astype(int)
+                select_dist = select_dist.sum(axis=1)
+                select_dist = np.where(select_dist>0,1,0)
+                num_colo = len(select_dist)
+                density_dict[rule] = num_colo/area
+
+
+        # for mode 2
+        elif mode ==2:
+            # in this case # of colocation patterns is just # of objects in the subregion
+            for type in types:
+                num_colo = len(idx_dict[type])
+                density_dict[type] = num_colo/area
+        
+        return density_dict
+
 if __name__=='__main__':
     # Initialization of map
 
@@ -168,7 +209,7 @@ if __name__=='__main__':
     populations={types[i]:v for i,v in enumerate([100,110,90])} # populations of different types
     max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
-    rules={('A','B'):20,('B','C'):20} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
+    rules={('A','B'):50,('B','C'):60} # B attracts A (B->A) within dist of 50, C attracts B (C->B) within dist of 60
     rule_probs={('A','B'):0.8,('B','C'):0.7} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
@@ -180,4 +221,9 @@ if __name__=='__main__':
     for i in tqdm(range(n_iters)):
         map.update_GUI()
     tt.done()
+
+    # dic1 = map.compute_density(thres = 20, mode=1)
+    # for k in dic1.items():
+    #     print(k)
+        
 
