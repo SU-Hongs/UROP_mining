@@ -112,8 +112,6 @@ class Map():
             
             pos[:,0]+=2*(np.maximum(-pos[:,0],0)-np.maximum(pos[:,0]-self.map_width,0))
             pos[:,1]+=2*(np.maximum(-pos[:,1],0)-np.maximum(pos[:,1]-self.map_height,0))
-            # pos[:,0]=np.clip(pos[:,0],0,self.map_width)
-            # pos[:,1]=np.clip(pos[:,1],0,self.map_height)
         
         # update distances
         self.update_distances()
@@ -126,7 +124,7 @@ class Map():
         tt.colormode(1.0)
         tt.penup()
         tt.shapesize(0.3,0.3,0.3)
-        tt.shape(name='circle')
+        tt.shape(name='turtle')
         self.colors=cm.rainbow(np.linspace(0,1,len(types)))[:,:3]
         self.textTurtle=tt.Turtle()
         
@@ -170,8 +168,8 @@ if __name__=='__main__':
     populations={types[i]:v for i,v in enumerate([100,110,90])} # populations of different types
     max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
-    rules={('A','B'):50,('B','C'):30} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
-    rule_probs={('A','B'):0.5,('B','C'):0.7} # probabilities of attraction if within range
+    rules={('A','B'):20,('B','C'):20} # B attracts A (B->A) within dist of 8, C attracts B (C->B) within dist of 10
+    rule_probs={('A','B'):0.8,('B','C'):0.7} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     n_iters=1000
