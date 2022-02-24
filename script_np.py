@@ -170,7 +170,7 @@ class Map():
         lb_x = int(self.map_width/4)
         lb_y = int(self.map_height/4)
         length = int(np.minimum(self.map_height,self.map_width)/3)
-        area = (length^2)/100 # divided by 100 to make the density moderate
+        area = (length**2)/100 # divided by 100 to make the density moderate
         idx_dict = dict()
         for type in self.types:
             x, y = self.positions[type][:,0], self.positions[type][:,1]
