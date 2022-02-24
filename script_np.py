@@ -43,10 +43,9 @@ class Map():
             type1,type2=rule
             pos1,pos2=self.positions[type1],self.positions[type2]
             self.distances[rule]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
-
-    # Do one iteration and return a reference to self.positions
-    def iterate(self):
     
+    # Update speed by rules
+    def update_speeds(self):
         def randomIndex(arr):
             idx=np.where(arr)[0]
             if len(idx)==0: return -1
@@ -95,7 +94,9 @@ class Map():
                 # speed is clipped to max speed
                 self.speeds[type]=self.max_speeds[type]*self.speeds[type] \
                     /np.maximum(self.max_speeds[type],np.linalg.norm(self.speeds[type],axis=1,keepdims=True)+self.eps)
-            
+
+    # Add speed to postition for each object, update distances
+    def update_positions(self):
         # update positions
         for type,s in self.speeds.items():
             
@@ -108,7 +109,7 @@ class Map():
             mask=~((pos[:,1]>=0)*(pos[:,1]<=self.map_height))
             s[mask,1]=-s[mask,1]
 
-            # clip position to value within map
+            # find the position after reflection
             
             pos[:,0]+=2*(np.maximum(-pos[:,0],0)-np.maximum(pos[:,0]-self.map_width,0))
             pos[:,1]+=2*(np.maximum(-pos[:,1],0)-np.maximum(pos[:,1]-self.map_height,0))
@@ -116,6 +117,10 @@ class Map():
         # update distances
         self.update_distances()
 
+    # Do one iteration and return a reference to self.positions
+    def iterate(self):
+        self.update_speeds()
+        self.update_positions()
         return self.positions
 
     def init_GUI(self):
@@ -206,11 +211,11 @@ if __name__=='__main__':
 
     map_width,map_height=1000,800 # width and height of the map
     types=['A','B','C'] # A,B,C types of objects
-    populations={types[i]:v for i,v in enumerate([100,110,90])} # populations of different types
+    populations={types[i]:v for i,v in enumerate([50,50,50])} # populations of different types
     max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
-    rules={('A','B'):50,('B','C'):60} # B attracts A (B->A) within dist of 50, C attracts B (C->B) within dist of 60
-    rule_probs={('A','B'):0.8,('B','C'):0.7} # probabilities of attraction if within range
+    rules={('A','B'):50,('B','C'):60} # B attracts A (B<-A) within dist of 50, C attracts B (C<-B) within dist of 60
+    rule_probs={('A','B'):0.6,('B','C'):0.7} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     n_iters=1000
