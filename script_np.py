@@ -26,15 +26,20 @@ class Map():
         thetas=np.random.rand(num,1)*2*pi
         return np.concatenate([np.cos(thetas),np.sin(thetas)],axis=1)
     
+    def randomIndex(self,arr):
+            idx=np.where(arr)[0]
+            if len(idx)==0: return -1
+            return np.random.choice(idx)
+    
     # Initialize positions and speeds for all types, compute the pairwise distances
     def init_objects(self):
         self.positions.clear()
-        for type in self.types:
-            population=self.populations[type]
+        for t in self.types:
+            population=self.populations[t]
             # random sampling of positions 
-            self.positions[type]=np.random.rand(population,2)*(self.map_width,self.map_height)
+            self.positions[t]=np.random.rand(population,2)*(self.map_width,self.map_height)
             # random sampling of speeds
-            self.speeds[type]=self.max_speeds[type]*np.random.rand(population,1)*self.random_unit_vectors(population)
+            self.speeds[t]=self.max_speeds[t]*np.random.rand(population,1)*self.random_unit_vectors(population)
         self.update_distances()
     
     # Compute pairwise distances of all rules
@@ -44,63 +49,68 @@ class Map():
             pos1,pos2=self.positions[type1],self.positions[type2]
             self.distances[rule]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
     
+    # Update speed for objects that is attracted by single object
+    def single_attraction(self,rule,dist):
+
+        type1,type2=rule
+        obj1_pos,obj2_pos=self.positions[type1],self.positions[type2]
+        num_type1=self.populations[type1]
+
+        # get random index of type2 that attracts type1, return -1 if not exists 
+        attracted_indices=np.apply_along_axis(self.randomIndex,1,self.distances[rule]<=dist)
+
+        # if some type2 is within range, attracted with probability rule_probs[type1]
+        attracted_mask=(attracted_indices!=-1)*(np.random.rand(num_type1)<self.rule_probs[rule])
+        attracted_indices=attracted_indices[attracted_mask]
+        
+        # if attracted, accelerate towards type2 with max acceleration
+        accs=obj2_pos[attracted_indices]-obj1_pos[attracted_mask]
+        accs=self.max_accs[type1]*accs/(np.linalg.norm(accs,axis=1,keepdims=True)+self.eps)
+
+        # update speed by adding acceleration
+        self.speeds[type1][attracted_mask]+=accs
+        num_not_att=np.sum(attracted_mask==False)
+        self.speeds[type1][attracted_mask==False]+=self.max_accs[type1]*np.random.rand(num_not_att,1)*self.random_unit_vectors(num_not_att)
+
+        # speed is clipped to max speed
+        self.speeds[type1]=self.max_speeds[type1]*self.speeds[type1] \
+            /np.maximum(self.max_speeds[type1],np.linalg.norm(self.speeds[type1],axis=1,keepdims=True)+self.eps)
+    
+    # Update speed for objects that is attracted by a group of objects
+    def multi_attraction(self,rule,dist):
+        pass
+    
     # Update speed by rules
     def update_speeds(self):
-        def randomIndex(arr):
-            idx=np.where(arr)[0]
-            if len(idx)==0: return -1
-            return np.random.choice(idx)
+        
     
         # assuming objects can only be attracted by at most one type. This will be improved later.
         updated_types=list()
 
-        # update speed
+        # update speed by rule
         for rule,dist in self.rules.items():
-            type1,type2=rule
-            if type1 in updated_types: continue
-
-            obj1_pos,obj2_pos=self.positions[type1],self.positions[type2]
-            num_type1=self.populations[type1]
-
-            # get random index of type2 that attracts type1, return -1 if not exists 
-            attracted_indices=np.apply_along_axis(randomIndex,1,self.distances[rule]<=dist)
-
-            # if some type2 is within range, attracted with probability rule_probs[type1]
-            attracted_mask=(attracted_indices!=-1)*(np.random.rand(num_type1)<self.rule_probs[rule])
-            attracted_indices=attracted_indices[attracted_mask]
-            
-            # if attracted, accelerate towards type2 with max acceleration
-            accs=obj2_pos[attracted_indices]-obj1_pos[attracted_mask]
-            accs=self.max_accs[type1]*accs/(np.linalg.norm(accs,axis=1,keepdims=True)+self.eps)
-
-            # update speed by adding acceleration
-            self.speeds[type1][attracted_mask]+=accs
-            num_not_att=np.sum(attracted_mask==False)
-            self.speeds[type1][attracted_mask==False]+=self.max_accs[type1]*np.random.rand(num_not_att,1)*self.random_unit_vectors(num_not_att)
-
-            # speed is clipped to max speed
-            self.speeds[type1]=self.max_speeds[type1]*self.speeds[type1] \
-                /np.maximum(self.max_speeds[type1],np.linalg.norm(self.speeds[type1],axis=1,keepdims=True)+self.eps)
-
-            updated_types.append(type1)
+            if rule[0] in updated_types: continue
+            if type(rule[1])==str: self.single_attraction(rule,dist)
+            elif type(rule[1])==tuple: self.multi_attraction(rule,dist)
+            updated_types.append(rule[0])
         
-        # update unattracted types
-        for type in self.types:
-            if type not in updated_types:
-                num_type=self.populations[type]
+        # randomly update speed of unattracted types
+        for t in self.types:
+            if t not in updated_types:
+                num_type=self.populations[t]
                 # update speed by adding acceleration
-                self.speeds[type]+=self.max_accs[type]*np.random.rand(num_type,1)*self.random_unit_vectors(num_type)
+                self.speeds[t]+=self.max_accs[t]*np.random.rand(num_type,1)*self.random_unit_vectors(num_type)
 
                 # speed is clipped to max speed
-                self.speeds[type]=self.max_speeds[type]*self.speeds[type] \
-                    /np.maximum(self.max_speeds[type],np.linalg.norm(self.speeds[type],axis=1,keepdims=True)+self.eps)
+                self.speeds[t]=self.max_speeds[t]*self.speeds[t] \
+                    /np.maximum(self.max_speeds[t],np.linalg.norm(self.speeds[t],axis=1,keepdims=True)+self.eps)
 
     # Add speed to postition for each object, update distances
     def update_positions(self):
         # update positions
-        for type,s in self.speeds.items():
+        for t,s in self.speeds.items():
             
-            pos=self.positions[type]
+            pos=self.positions[t]
             pos+=s
 
             # reverse the direction of speed when collision happens
@@ -146,10 +156,10 @@ class Map():
         self.textTurtle.penup()
         self.textTurtle.goto(0,self.map_height*1.05)
         self.textTurtle.setheading(0)
-        for type,color in zip(self.types,self.colors):
+        for t,color in zip(self.types,self.colors):
             self.textTurtle.color(*color)
             self.textTurtle.stamp()
-            self.textTurtle.write(type)
+            self.textTurtle.write(t)
             self.textTurtle.fd(0.5*map_width/max(len(self.types),5))
         self.textTurtle.ht()
         tt.update()
@@ -157,8 +167,8 @@ class Map():
     def update_GUI(self):
         positions=map.iterate()
         tt.clear()
-        for i,type in enumerate(positions.keys()):
-            pos=positions[type]
+        for i,t in enumerate(positions.keys()):
+            pos=positions[t]
             tt.color(*self.colors[i])
             for p in pos:
                 tt.goto(p[0],p[1])
@@ -177,18 +187,18 @@ class Map():
         length = int(np.minimum(self.map_height,self.map_width)/3)
         area = (length**2)/100 # divided by 100 to make the density moderate
         idx_dict = dict()
-        for type in self.types:
-            x, y = self.positions[type][:,0], self.positions[type][:,1]
+        for t in self.types:
+            x, y = self.positions[t][:,0], self.positions[t][:,1]
             idx = np.where((x>=lb_x) & (x<lb_x+length) & (y>=lb_y) & (y<lb_y+length))[0]
-            idx_dict[type] = idx
+            idx_dict[t] = idx
 
         density_dict = dict()
         # for mode 1
         if mode == 1:
             for rule in rules:
-                type, _=rule
+                t, _=rule
                 curr_dist = self.distances[rule]
-                idx = idx_dict[type]
+                idx = idx_dict[t]
                 select_dist = curr_dist[idx]
                 select_dist = (select_dist<thres).astype(int)
                 select_dist = select_dist.sum(axis=1)
@@ -200,9 +210,9 @@ class Map():
         # for mode 2
         elif mode ==2:
             # in this case # of colocation patterns is just # of objects in the subregion
-            for type in types:
-                num_colo = len(idx_dict[type])
-                density_dict[type] = num_colo/area
+            for t in types:
+                num_colo = len(idx_dict[t])
+                density_dict[t] = num_colo/area
         
         return density_dict
 
@@ -215,7 +225,7 @@ if __name__=='__main__':
     max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
     rules={('A','B'):50,('B','C'):60} # B attracts A (B<-A) within dist of 50, C attracts B (C<-B) within dist of 60
-    rule_probs={('A','B'):0.6,('B','C'):0.7} # probabilities of attraction if within range
+    rule_probs={('A','B'):0.7,('B','C'):0.6} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     n_iters=1000
