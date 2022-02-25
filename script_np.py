@@ -4,6 +4,18 @@ import turtle as tt
 import matplotlib.cm as cm
 from tqdm import tqdm
 
+class DistDict(dict):
+    # Customized to avoid duplicated calculation of pairwise distances, like (A,B) and (B,A)...
+    def __getitem__(self,key):
+        if type(key)==tuple: new_key=tuple(sorted(list(key)))
+        if key==new_key: return super().__getitem__(key)
+        return super().__getitem__(new_key).T
+
+    def __setitem__(self,key,val):
+        if type(key)==tuple: new_key=tuple(sorted(list(key)))
+        if key==new_key: return super().__setitem__(new_key,val)
+        return super().__setitem__(new_key,val.T)
+
 class Map():
     def __init__(self,map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,eps=1e-7):
         self.map_width,self.map_height=map_width,map_height # width and height of the map
@@ -15,7 +27,7 @@ class Map():
         self.rule_probs=rule_probs # probabilities of attraction if within range
         self.positions=dict() # dict of arrays of different types of objects
         self.speeds=dict() # dict os arrays of different types of objects
-        self.distances=dict() # dict of pairwise distances for all rules
+        self.distances=DistDict() # dict of pairwise distances for all rules
         self.eps=eps # small number to avoid division by zero
 
         self.init_objects()
@@ -44,10 +56,19 @@ class Map():
     
     # Compute pairwise distances of all rules
     def update_distances(self):
+        updated_pairs=list()
         for rule in self.rules.keys():
             type1,type2=rule
-            pos1,pos2=self.positions[type1],self.positions[type2]
-            self.distances[rule]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
+            if type(type2)==str and set(rule) not in updated_pairs: # attracted by single object
+                pos1,pos2=self.positions[type1],self.positions[type2]
+                self.distances[rule]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
+                updated_pairs.append(set(rule))
+            elif type(type2)==tuple: # attracted by a group of objects
+                for t in type2:
+                    if set([type1,t]) not in updated_pairs:
+                        pos1,pos2=self.positions[type1],self.positions[t]
+                        self.distances[(type1,t)]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
+                        updated_pairs.append(set([type1,t]))
     
     # Update speed for objects that is attracted by single object
     def single_attraction(self,rule,dist):
@@ -78,11 +99,41 @@ class Map():
     
     # Update speed for objects that is attracted by a group of objects
     def multi_attraction(self,rule,dist):
-        pass
+        type1,type2=rule
+        obj1_pos=self.positions[type1]
+        num_type1=self.populations[type1]
+
+        # get random index of type2 that attracts type1, return -1 if not exists 
+        attracted_indices=np.concatenate([np.apply_along_axis(self.randomIndex,1,self.distances[(type1,t)]<=dist).reshape(-1,1) for t in type2],axis=1)
+        
+        # if some type2 is within range, attracted with probability rule_probs[type1]
+        attracted_mask=(~np.any(attracted_indices==-1,axis=1))&(np.random.rand(num_type1)<self.rule_probs[rule])
+        attracted_indices=attracted_indices[attracted_mask]
+        
+        # get the center pos of the group of objects that attract type1
+        centers=[np.mean([self.positions[t][idx[i]] for i,t in enumerate(type2)],axis=0).reshape(1,-1) for idx in attracted_indices]
+        
+        obj2_pos,accs=None,None
+        if len(centers)>0: # there exists some attracted objects
+            obj2_pos=np.concatenate(centers,axis=0)
+
+            # if attracted, accelerate towards type2 with max acceleration
+            accs=obj2_pos-obj1_pos[attracted_mask]
+            accs=self.max_accs[type1]*accs/(np.linalg.norm(accs,axis=1,keepdims=True)+self.eps)
+
+            # update speed by adding acceleration
+            self.speeds[type1][attracted_mask]+=accs
+        
+        # randomly choose acceleration to update speed of non-attracted objects
+        num_not_att=np.sum(attracted_mask==False)
+        self.speeds[type1][attracted_mask==False]+=self.max_accs[type1]*np.random.rand(num_not_att,1)*self.random_unit_vectors(num_not_att)
+
+        # speed is clipped to max speed
+        self.speeds[type1]=self.max_speeds[type1]*self.speeds[type1] \
+            /np.maximum(self.max_speeds[type1],np.linalg.norm(self.speeds[type1],axis=1,keepdims=True)+self.eps)
     
     # Update speed by rules
     def update_speeds(self):
-        
     
         # assuming objects can only be attracted by at most one type. This will be improved later.
         updated_types=list()
@@ -221,14 +272,14 @@ if __name__=='__main__':
 
     map_width,map_height=1000,800 # width and height of the map
     types=['A','B','C'] # A,B,C types of objects
-    populations={types[i]:v for i,v in enumerate([50,50,50])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,4,5])} # max velocities of different types
+    populations={types[i]:v for i,v in enumerate([100,100,100])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
-    rules={('A','B'):50,('B','C'):60} # B attracts A (B<-A) within dist of 50, C attracts B (C<-B) within dist of 60
-    rule_probs={('A','B'):0.7,('B','C'):0.6} # probabilities of attraction if within range
+    rules={('A','B'):40,('C',('B','A')):40} # B attracts A (A->B) within dist of 40, (A,B) attracts C (C->AB) within dist of 40
+    rule_probs={('A','B'):0.8,('C',('B','A')):0.8} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
-    n_iters=1000
+    n_iters=10000
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
