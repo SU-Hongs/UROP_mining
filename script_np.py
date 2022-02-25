@@ -271,12 +271,13 @@ if __name__=='__main__':
     # Initialization of map
 
     map_width,map_height=1000,800 # width and height of the map
-    types=['A','B','C'] # A,B,C types of objects
-    populations={types[i]:v for i,v in enumerate([100,100,100])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
-    rules={('A','B'):40,('C',('B','A')):40} # B attracts A (A->B) within dist of 40, (A,B) attracts C (C->AB) within dist of 40
-    rule_probs={('A','B'):0.8,('C',('B','A')):0.8} # probabilities of attraction if within range
+    types=['A','B','C','D'] # types of objects
+    populations={types[i]:v for i,v in enumerate([100,100,100,100])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('B','A')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([40,40,60])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8,0.7])} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     n_iters=10000
