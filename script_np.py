@@ -292,5 +292,3 @@ if __name__=='__main__':
     # dic1 = map.compute_density(thres = 20, mode=1)
     # for k in dic1.items():
     #     print(k)
-        
-
