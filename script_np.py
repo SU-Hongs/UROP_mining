@@ -246,7 +246,7 @@ class Map():
         density_dict = dict()
         # for mode 1
         if mode == 1:
-            for rule in rules:
+            for rule in self.rules:
                 t, _=rule
                 curr_dist = self.distances[rule]
                 idx = idx_dict[t]
@@ -261,7 +261,7 @@ class Map():
         # for mode 2
         elif mode ==2:
             # in this case # of colocation patterns is just # of objects in the subregion
-            for t in types:
+            for t in self.types:
                 num_colo = len(idx_dict[t])
                 density_dict[t] = num_colo/area
         
@@ -280,15 +280,24 @@ if __name__=='__main__':
     rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8,0.7])} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
-    n_iters=10000
+
+    n_iters=30 # originally is 1000
+    # suppose we want to study A ->(A,B) in this case
+    # a list containing the density for chosen A for all iterations    
+    B_density = []
+    # a list for (A,B)
+    AB_density = []
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
     map.init_GUI()
     for i in tqdm(range(n_iters)):
         map.update_GUI()
+        dic1 = map.compute_density(thres = 25, mode=1)
+        dic2 = map.compute_density(thres = 25, mode = 2)
+        B_density.append(dic2['B'])
+        AB_density.append(dic1[('A','B')])
     tt.done()
-
-    # dic1 = map.compute_density(thres = 20, mode=1)
-    # for k in dic1.items():
-    #     print(k)
+    print (B_density)
+    print("\n")
+    print(AB_density)
