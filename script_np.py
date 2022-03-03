@@ -226,6 +226,25 @@ class Map():
                 tt.stamp()
         tt.update()
 
+    # idx of current active objects in the sub-region
+    def compute_colocation(self, thres,rule,idx):
+        obj1,objs = rule
+        col_list = []
+        for obj in objs:
+            curr_dist = self.distances[(obj1,obj)]
+            select_dist = curr_dist[idx]
+            select_dist = (select_dist<thres).astype(int)
+            select_dist = select_dist.sum(axis=1)
+            select_dist = np.where(select_dist>0)[0]
+            col_list.append( select_dist )
+        final_col=[]
+        for i in range(len(col_list)):
+            # if i==len(col_list)-1: break
+            if i==0: final_col = col_list[0]
+            final_col = np.intersect1d(final_col,col_list[i])
+        return len(final_col)
+
+
     # a function to select the objects in the targeted sub-region
     # return a dictionary of the the colocation density of the colocation patterns 
     # mode 1 stands for computing density for rules (i.e. at least a colocation pattern of size 2)
@@ -235,8 +254,8 @@ class Map():
         # define the left bottom corner of the sub-region and the length
         lb_x = int(self.map_width/4)
         lb_y = int(self.map_height/4)
-        length = int(np.minimum(self.map_height,self.map_width)/3)
-        area = (length**2)/100 # divided by 100 to make the density moderate
+        length = int(np.minimum(self.map_height,self.map_width)/2)
+        area = (length**2)/10000 # divided by 100 to make the density moderate
         idx_dict = dict()
         for t in self.types:
             x, y = self.positions[t][:,0], self.positions[t][:,1]
@@ -248,14 +267,14 @@ class Map():
         if mode == 1:
             for rule in self.rules:
                 t, _=rule
-                curr_dist = self.distances[rule]
                 idx = idx_dict[t]
-                select_dist = curr_dist[idx]
-                select_dist = (select_dist<thres).astype(int)
-                select_dist = select_dist.sum(axis=1)
-                select_dist = np.where(select_dist>0,1,0)
-                num_colo = len(select_dist)
-                density_dict[rule] = num_colo/area
+                # select_dist = curr_dist[idx]
+                # select_dist = (select_dist<thres).astype(int)
+                # select_dist = select_dist.sum(axis=1)
+                # select_dist = np.where(select_dist>0,1,0)
+                # num_colo = len(select_dist)
+                num_colo = self.compute_colocation(thres,rule,idx)
+                density_dict[rule] = num_colo
 
 
         # for mode 2
@@ -263,30 +282,36 @@ class Map():
             # in this case # of colocation patterns is just # of objects in the subregion
             for t in self.types:
                 num_colo = len(idx_dict[t])
-                density_dict[t] = num_colo/area
+                density_dict[t] = num_colo
         
         return density_dict
 
 if __name__=='__main__':
     # Initialization of map
 
-    map_width,map_height=1000,800 # width and height of the map
+    map_width,map_height=900,750 # width and height of the map
     types=['A','B','C','D'] # types of objects
-    populations={types[i]:v for i,v in enumerate([100,100,100,100])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5])} # max accelerations of different types
-    rule_list=[('A','B'),('C',('B','A')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    rules={rule_list[i]:p for i,p in enumerate([40,40,60])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8,0.7])} # probabilities of attraction if within range
+    populations={types[i]:v for i,v in enumerate([210,150,150,150])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([6,3,3,4])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.6])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
-
-    n_iters=30 # originally is 1000
+    print(map.rules)
+    n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     B_density = []
     # a list for (A,B)
     AB_density = []
+    ABC_density = []
+    ABCD_density=[]
+    # DE_density = []
+    # DEF_density=[]
+    #A_density = []
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
@@ -295,9 +320,25 @@ if __name__=='__main__':
         map.update_GUI()
         dic1 = map.compute_density(thres = 25, mode=1)
         dic2 = map.compute_density(thres = 25, mode = 2)
+        #dic3 = map.compute_density(thres = 20, mode = 1)
+        #A_density.append(dic2['A'])
         B_density.append(dic2['B'])
         AB_density.append(dic1[('A','B')])
+        ABC_density.append(dic1[('C',('A','B'))])
+        ABCD_density.append(dic1[('D',('A','B','C'))])
+        # DE_density.append(dic3[('D','E')])
+        # DEF_density.append(dic3[('F',('D','E'))])
     tt.done()
+    # print(A_density)
+    # print("\n")
     print (B_density)
     print("\n")
     print(AB_density)
+    print("\n")
+    print(ABC_density)
+    print("\n")
+    print(ABCD_density)
+    # print("\n")
+    # print(DE_density)
+    # print("\n")
+    # print(DEF_density)
