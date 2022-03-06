@@ -80,7 +80,7 @@ class Map():
                 self.distances[(t1,t2)]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
     
     # Flatten rule to list of types
-    def flatten_rule(rule):
+    def flatten_rule(self,rule):
         obj1,objs=rule
         if type(objs)==str: return [obj1,objs]
         elif type(objs)==tuple: return list(objs)+[obj1,]
@@ -265,7 +265,7 @@ class Map():
     # full_list is the list of types for a colocation pattern
     # curr_list is used for recursion
     # colo_list is a 2d array, where each row is a colocation instance of curr_list
-    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=None):
+    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=[]):
         if len(full_list)==len(curr_list): return len(colo_list)
         type1 = full_list[len(curr_list)] # new type of object
         objs_t1=idx[type1] # indices of type1 objects in window
@@ -314,14 +314,8 @@ class Map():
         # for mode 1
         if mode == 1:
             for rule in self.rules:
-                t, _=rule
-                idx = idx_dict[t]
-                # select_dist = curr_dist[idx]
-                # select_dist = (select_dist<thres).astype(int)
-                # select_dist = select_dist.sum(axis=1)
-                # select_dist = np.where(select_dist>0,1,0)
-                # num_colo = len(select_dist)
-                num_colo = self.compute_colocation(thres,rule,idx)
+                full_list = self.flatten_rule(rule)
+                num_colo = self.compute_colocation(thres,idx_dict,full_list)
                 density_dict[rule] = num_colo
 
 
@@ -349,7 +343,7 @@ if __name__=='__main__':
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     print(map.rules)
-    n_iters=1000 # originally is 1000
+    n_iters=10 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     B_density = []
