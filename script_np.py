@@ -260,22 +260,38 @@ class Map():
     #         final_col = np.intersect1d(final_col,col_list[i])
     #     return len(final_col)
 
-    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=[]):
+    # thres is the max distance within a colocation
+    # idx is a map from type to indices of objects in a window
+    # full_list is the list of types for a colocation pattern
+    # curr_list is used for recursion
+    # colo_list is a 2d array, where each row is a colocation instance of curr_list
+    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=None):
         if len(full_list)==len(curr_list): return len(colo_list)
-        obj1 = full_list[len(curr_list)]
-        for obj in curr_list:
-            curr_dist = self.distances[(obj1,obj)]
-            select_dist = curr_dist[idx[obj1]]
-            select_dist = (select_dist<thres).astype(int)
-            select_dist = select_dist.sum(axis=1)
-            select_dist = np.where(select_dist>0)[0]
-            col_list.append( select_dist )
-        final_col=[]
-        for i in range(len(col_list)):
-            # if i==len(col_list)-1: break
-            if i==0: final_col = col_list[0]
-            final_col = np.intersect1d(final_col,col_list[i])
-            
+        type1 = full_list[len(curr_list)] # new type of object
+        objs_t1=idx[type1] # indices of type1 objects in window
+        pos_t1=self.positions[type1][objs_t1] # get positions of type1 objects in window
+
+        # base case
+        if len(curr_list)==0: # add all objects of type1 within the window
+            curr_list.append(type1)
+            colo_list=np.array(objs_t1).reshape(-1,1)
+            return self.compute_colocation(thres,idx,full_list,curr_list,colo_list)
+        
+        # general case
+        mask=np.ones((len(colo_list),len(objs_t1))) # mask[i,j] checks whether colo_list[i] and objs_t1[j] form a colocation
+        for i,type2 in enumerate(curr_list):
+            objs_t2=colo_list[:,i]
+            pos_t2=self.positions[type2][objs_t2] # get positions of type2 objects in window
+            # pairwise distances of shape = (# of type2) * (# of type1)
+            dists=np.sqrt(-2*pos_t2.dot(pos_t1.T)+np.sum(pos_t2**2,axis=1,keepdims=True)+np.sum(pos_t1**2,axis=1))
+            mask*=(dists<=thres) # check whether type1 and type2 has distance less than thres
+        curr_list.append(type1)
+        colo_list=np.array(
+            [list(colo_list[idx_colo])+[objs_t1[idx_t1]] 
+            for idx_colo,row in enumerate(mask) 
+                for idx_t1,val in enumerate(row) 
+                    if val==True]) # generate new colo_list for curr_list
+        return self.compute_colocation(thres,idx,full_list,curr_list,colo_list)
 
     # a function to select the objects in the targeted sub-region
     # return a dictionary of the the colocation density of the colocation patterns 
