@@ -292,6 +292,7 @@ class Map():
             for idx_colo,row in enumerate(mask) 
                 for idx_t1,val in enumerate(row) 
                     if val==True]) # generate new colo_list for curr_list
+        if len(colo_list)==0: return 0 # if empty, return 0
         return self.compute_colocation(thres,idx,full_list,curr_list,colo_list)
 
     # a function to select the objects in the targeted sub-region
@@ -344,7 +345,7 @@ if __name__=='__main__':
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     print(map.rules)
-    n_iters=10 # originally is 1000
+    n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     B_density = []
