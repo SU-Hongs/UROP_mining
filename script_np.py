@@ -52,7 +52,8 @@ class Map():
             self.positions[t]=np.random.rand(population,2)*(self.map_width,self.map_height)
             # random sampling of speeds
             self.speeds[t]=self.max_speeds[t]*np.random.rand(population,1)*self.random_unit_vectors(population)
-        self.update_distances()
+        # self.update_distances()
+        self.compute_all_pairwise_dist()
     
     # Compute pairwise distances of all rules
     def update_distances(self):
@@ -77,6 +78,12 @@ class Map():
                 if t2<=t1: continue # lexicographical order
                 pos1,pos2=self.positions[t1],self.positions[t2]
                 self.distances[(t1,t2)]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
+    
+    # Flatten rule to list of types
+    def flatten_rule(rule):
+        obj1,objs=rule
+        if type(objs)==str: return [obj1,objs]
+        elif type(objs)==tuple: return list(objs)+[obj1,]
     
     # Update speed for objects that is attracted by single object
     def single_attraction(self,rule,dist):
@@ -184,7 +191,8 @@ class Map():
             pos[:,1]+=2*(np.maximum(-pos[:,1],0)-np.maximum(pos[:,1]-self.map_height,0))
         
         # update distances
-        self.update_distances()
+        # self.update_distances()
+        self.compute_all_pairwise_dist()
 
     # Do one iteration and return a reference to self.positions
     def iterate(self):
