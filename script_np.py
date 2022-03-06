@@ -265,7 +265,8 @@ class Map():
     # full_list is the list of types for a colocation pattern
     # curr_list is used for recursion
     # colo_list is a 2d array, where each row is a colocation instance of curr_list
-    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=[]):
+    def compute_colocation(self,thres,idx,full_list,curr_list=None,colo_list=None):
+        if curr_list==None: curr_list=list()
         if len(full_list)==len(curr_list): return len(colo_list)
         type1 = full_list[len(curr_list)] # new type of object
         objs_t1=idx[type1] # indices of type1 objects in window
