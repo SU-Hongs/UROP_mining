@@ -235,12 +235,29 @@ class Map():
         tt.update()
 
     # idx of current active objects in the sub-region
-    def compute_colocation(self, thres,rule,idx):
-        obj1,objs = rule
-        col_list = []
-        for obj in objs:
+    # def compute_colocation(self, thres,rule,idx):
+    #     obj1,objs = rule
+    #     col_list = []
+    #     for obj in objs:
+    #         curr_dist = self.distances[(obj1,obj)]
+    #         select_dist = curr_dist[idx]
+    #         select_dist = (select_dist<thres).astype(int)
+    #         select_dist = select_dist.sum(axis=1)
+    #         select_dist = np.where(select_dist>0)[0]
+    #         col_list.append( select_dist )
+    #     final_col=[]
+    #     for i in range(len(col_list)):
+    #         # if i==len(col_list)-1: break
+    #         if i==0: final_col = col_list[0]
+    #         final_col = np.intersect1d(final_col,col_list[i])
+    #     return len(final_col)
+
+    def compute_colocation(self,thres,idx,full_list,curr_list=[],colo_list=[]):
+        if len(full_list)==len(curr_list): return len(colo_list)
+        obj1 = full_list[len(curr_list)]
+        for obj in curr_list:
             curr_dist = self.distances[(obj1,obj)]
-            select_dist = curr_dist[idx]
+            select_dist = curr_dist[idx[obj1]]
             select_dist = (select_dist<thres).astype(int)
             select_dist = select_dist.sum(axis=1)
             select_dist = np.where(select_dist>0)[0]
@@ -250,8 +267,7 @@ class Map():
             # if i==len(col_list)-1: break
             if i==0: final_col = col_list[0]
             final_col = np.intersect1d(final_col,col_list[i])
-        return len(final_col)
-
+            
 
     # a function to select the objects in the targeted sub-region
     # return a dictionary of the the colocation density of the colocation patterns 
