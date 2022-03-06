@@ -3,6 +3,7 @@ from math import pi
 import turtle as tt
 import matplotlib.cm as cm
 from tqdm import tqdm
+import csv
 
 class DistDict(dict):
     # Customized to avoid duplicated calculation of pairwise distances, like (A,B) and (B,A)...
@@ -351,44 +352,29 @@ if __name__=='__main__':
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     print(map.rules)
-    n_iters=100 # originally is 1000
+    n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
-    B_density = []
-    # a list for (A,B)
-    AB_density = []
-    ABC_density = []
-    ABCD_density=[]
-    # DE_density = []
-    # DEF_density=[]
-    #A_density = []
+    densities={}
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
     map.init_GUI()
     for i in tqdm(range(n_iters)):
         map.update_GUI()
-        dic1 = map.compute_density(thres = 25, mode=1)
-        dic2 = map.compute_density(thres = 25, mode = 2)
-        #dic3 = map.compute_density(thres = 20, mode = 1)
-        #A_density.append(dic2['A'])
-        B_density.append(dic2['B'])
-        AB_density.append(dic1[('A','B')])
-        ABC_density.append(dic1[('C',('A','B'))])
-        ABCD_density.append(dic1[('D',('A','B','C'))])
-        # DE_density.append(dic3[('D','E')])
-        # DEF_density.append(dic3[('F',('D','E'))])
+        dic = map.compute_density(thres = 25, mode=1)
+        dic.update(map.compute_density(thres = 25, mode = 2))
+        if(len(densities.keys())==0): densities.update({k:[] for k in dic})
+        for key,val in dic.items():
+            densities[key].append(val)
     if map.use_GUI(): tt.done()
-    # print(A_density)
-    # print("\n")
-    print (B_density)
-    print("\n")
-    print(AB_density)
-    print("\n")
-    print(ABC_density)
-    print("\n")
-    print(ABCD_density)
-    # print("\n")
-    # print(DE_density)
-    # print("\n")
-    # print(DEF_density)
+    # for key,val in densities.items():
+    #     print(key,':')
+    #     print(val)
+    with open('data.csv','w',newline='') as csvfile:
+        fieldnames = [k for k in densities.keys()]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        length=len(densities[fieldnames[0]])
+        for i in range(length):
+            writer.writerow({name:densities[name][i] for name in fieldnames})
