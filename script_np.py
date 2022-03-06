@@ -70,6 +70,14 @@ class Map():
                         self.distances[(type1,t)]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
                         updated_pairs.append(set([type1,t]))
     
+    # Compute all pairwise distances
+    def compute_all_pairwise_dist(self):
+        for t1 in self.types:
+            for t2 in self.types:
+                if t2<=t1: continue # lexicographical order
+                pos1,pos2=self.positions[t1],self.positions[t2]
+                self.distances[(t1,t2)]=np.sqrt(-2*pos1.dot(pos2.T)+np.sum(pos1**2,axis=1,keepdims=True)+np.sum(pos2**2,axis=1))
+    
     # Update speed for objects that is attracted by single object
     def single_attraction(self,rule,dist):
 
