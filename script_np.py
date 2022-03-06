@@ -17,7 +17,7 @@ class DistDict(dict):
         return super().__setitem__(new_key,val.T)
 
 class Map():
-    def __init__(self,map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,eps=1e-7):
+    def __init__(self,map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,useGUI=False,eps=1e-7):
         self.map_width,self.map_height=map_width,map_height # width and height of the map
         self.types=types # types of objects
         self.populations=populations # populations of different types
@@ -28,11 +28,15 @@ class Map():
         self.positions=dict() # dict of arrays of different types of objects
         self.speeds=dict() # dict os arrays of different types of objects
         self.distances=DistDict() # dict of pairwise distances for all rules
+        self.useGUI=useGUI # use GUI or not
         self.eps=eps # small number to avoid division by zero
 
         self.init_objects()
         self.init_GUI()
     
+    def use_GUI(self):
+        return self.useGUI
+
     def random_unit_vectors(self,num):
         # random sampling of speeds
         thetas=np.random.rand(num,1)*2*pi
@@ -201,6 +205,7 @@ class Map():
         return self.positions
 
     def init_GUI(self):
+        if not self.useGUI: return
         tt.tracer(False)
         tt.setworldcoordinates(0,0,self.map_width,self.map_height*1.1)
         tt.colormode(1.0)
@@ -233,14 +238,15 @@ class Map():
     
     def update_GUI(self):
         positions=map.iterate()
-        tt.clear()
-        for i,t in enumerate(positions.keys()):
-            pos=positions[t]
-            tt.color(*self.colors[i])
-            for p in pos:
-                tt.goto(p[0],p[1])
-                tt.stamp()
-        tt.update()
+        if self.useGUI:
+            tt.clear()
+            for i,t in enumerate(positions.keys()):
+                pos=positions[t]
+                tt.color(*self.colors[i])
+                for p in pos:
+                    tt.goto(p[0],p[1])
+                    tt.stamp()
+            tt.update()
 
     # idx of current active objects in the sub-region
     # def compute_colocation(self, thres,rule,idx):
@@ -342,11 +348,10 @@ if __name__=='__main__':
     #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
-    use_GUI=False # use GUI of not
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     print(map.rules)
-    n_iters=1000 # originally is 1000
+    n_iters=100 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     B_density = []
@@ -360,9 +365,9 @@ if __name__=='__main__':
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
-    if use_GUI: map.init_GUI()
+    map.init_GUI()
     for i in tqdm(range(n_iters)):
-        if use_GUI: map.update_GUI()
+        map.update_GUI()
         dic1 = map.compute_density(thres = 25, mode=1)
         dic2 = map.compute_density(thres = 25, mode = 2)
         #dic3 = map.compute_density(thres = 20, mode = 1)
@@ -373,7 +378,7 @@ if __name__=='__main__':
         ABCD_density.append(dic1[('D',('A','B','C'))])
         # DE_density.append(dic3[('D','E')])
         # DEF_density.append(dic3[('F',('D','E'))])
-    if use_GUI: tt.done()
+    if map.use_GUI(): tt.done()
     # print(A_density)
     # print("\n")
     print (B_density)
