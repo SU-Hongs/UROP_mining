@@ -4,6 +4,7 @@ import turtle as tt
 import matplotlib.cm as cm
 from tqdm import tqdm
 import csv
+import copy
 
 class DistDict(dict):
     # Customized to avoid duplicated calculation of pairwise distances, like (A,B) and (B,A)...
@@ -34,6 +35,12 @@ class Map():
 
         self.init_objects()
         self.init_GUI()
+
+    def get_snapshot(self):
+        return copy.deepcopy(self.positions),copy.deepcopy(self.speeds),copy.deepcopy(self.distances)
+    
+    def load_snapshot(self,positions,speeds,distances):
+        self.positions,self.speeds,self.distances=positions,speeds,distances
     
     def use_GUI(self):
         return self.useGUI
@@ -368,9 +375,6 @@ if __name__=='__main__':
         for key,val in dic.items():
             densities[key].append(val)
     if map.use_GUI(): tt.done()
-    # for key,val in densities.items():
-    #     print(key,':')
-    #     print(val)
     with open('data.csv','w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
