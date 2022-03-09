@@ -5,6 +5,7 @@ import matplotlib.cm as cm
 from tqdm import tqdm
 import csv
 import copy
+import itertools
 
 class DistDict(dict):
     # Customized to avoid duplicated calculation of pairwise distances, like (A,B) and (B,A)...
@@ -220,7 +221,7 @@ class Map():
         tt.penup()
         tt.shapesize(0.3,0.3,0.3)
         tt.shape(name='circle')
-        self.colors=cm.rainbow(np.linspace(0,1,len(types)))[:,:3]
+        self.colors=cm.rainbow(np.linspace(0,1,len(self.types)))[:,:3]
         self.textTurtle=tt.Turtle()
         
         self.textTurtle.goto(0,0)
@@ -255,6 +256,49 @@ class Map():
                     tt.goto(p[0],p[1])
                     tt.stamp()
             tt.update()
+
+    # return a map from (T1,T2,...) to number of colocations
+    def compute_colocations(self,thres,idx):
+        colocations={} # map from colocation pattern to num of colocation
+        colo_lists={} # map from colcoation pattern to ndarray of colocation instances
+        
+        # base case
+        for t in self.types:
+            colocations[(t,)]=len(idx[t])
+            colo_lists[(t,)]=np.array(idx[t]).reshape(-1,1)
+
+        # general case
+        for L in range(2,len(self.types)+1):
+            for subset in itertools.combinations(self.types,L):
+                full_list=sorted(list(subset))
+                curr_list=full_list[:-1]
+                if tuple(curr_list) not in colo_lists: # no colocation for curr_list
+                    colocations[tuple(full_list)]=0
+                    continue
+                colo_list=colo_lists[tuple(curr_list)] # there exists colocation for curr_list
+
+                type1 = full_list[len(curr_list)] # new type of object
+                objs_t1=idx[type1] # indices of type1 objects in window
+                pos_t1=self.positions[type1][objs_t1] # get positions of type1 objects in window
+
+                mask=np.ones((len(colo_list),len(objs_t1))) # mask[i,j] checks whether colo_list[i] and objs_t1[j] form a colocation
+                for i,type2 in enumerate(curr_list):
+                    objs_t2=colo_list[:,i]
+                    pos_t2=self.positions[type2][objs_t2] # get positions of type2 objects in window
+                    # pairwise distances of shape = (# of type2) * (# of type1)
+                    dists=np.sqrt(-2*pos_t2.dot(pos_t1.T)+np.sum(pos_t2**2,axis=1,keepdims=True)+np.sum(pos_t1**2,axis=1))
+                    mask*=(dists<=thres) # check whether type1 and type2 has distance less than thres
+                colo_list=np.array(
+                    [list(colo_list[idx_colo])+[objs_t1[idx_t1]] 
+                    for idx_colo,row in enumerate(mask) 
+                        for idx_t1,val in enumerate(row) 
+                            if val==True]) # generate new colo_list for curr_list
+                if len(colo_list)==0: colocations[tuple(full_list)]=0
+                else:
+                    colocations[tuple(full_list)]=len(colo_list)
+                    colo_lists[tuple(full_list)]=colo_list
+        return colocations
+
 
     # thres is the max distance within a colocation
     # idx is a map from type to indices of objects in a window
@@ -293,9 +337,14 @@ class Map():
 
     # a function to select the objects in the targeted sub-region
     # return a dictionary of the the colocation density of the colocation patterns 
+    # mode 0 computes all densities
     # mode 1 stands for computing density for rules (i.e. at least a colocation pattern of size 2)
     # mode 2 stands for computing density for individual types of objects
-    def compute_density(self, thres, mode):
+    def compute_density(self, thres, mode=0):
+        if mode==0:
+            dic = self.compute_density(thres = 25, mode=1)
+            dic.update(self.compute_density(thres = 25, mode = 2))
+            return dic
         # first select the index of the objects that is in the range of the targeted subregion
         # define the left bottom corner of the sub-region and the length
         lb_x = int(self.map_width/4)
@@ -350,8 +399,7 @@ def generate_data():
     map.init_GUI()
     for i in tqdm(range(n_iters)):
         map.update_GUI()
-        dic = map.compute_density(thres = 25, mode=1)
-        dic.update(map.compute_density(thres = 25, mode = 2))
+        dic = map.compute_density(thres = 25)
         if(len(densities.keys())==0): densities.update({k:[] for k in dic})
         for key,val in dic.items():
             densities[key].append(val)
@@ -366,7 +414,51 @@ def generate_data():
 
 # compute variance of difference of colocation num at time t
 def compute_variance():
-    pass
+    # Initialization of map
+    map_width,map_height=900,750 # width and height of the map
+    types=['A','B','C','D'] # types of objects
+    populations={types[i]:v for i,v in enumerate([210,150,150,150])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([6,3,3,4])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.6])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
+    n_iters=1000 # originally is 1000
+    timestamps=[100,200,300,400,500,600,700,800,900] # timestamps of interest
+    colocation_pattern=('C',('A','B')) # colocation pattern of interest
+    n_repeat=1000 # repetition to calculate variance of difference of oclocation num at time t
+
+    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
+    print(map.rules)
+    # suppose we want to study A ->(A,B) in this case
+    # a list containing the density for chosen A for all iterations    
+    densities={}
+    for rule in rules.keys():
+        type1,type2=rule
+        print('%s is attracted by %s'%(type1,type2))
+    map.init_GUI()
+    for i in tqdm(range(n_iters)):
+        map.update_GUI()
+        dic = map.compute_density(thres = 25)
+        if(len(densities.keys())==0): densities.update({k:[] for k in dic})
+        for key,val in dic.items():
+            densities[key].append(val)
+        
+        if i in timestamps:
+            original_snapshot=map.get_snapshot()
+            a_ts=[]
+            for j in range(n_repeat):
+                map.update_GUI()
+                new_dic = map.compute_density(thres = 25)
+                a_ts.append(new_dic[colocation_pattern]-dic[colocation_pattern])
+                map.load_snapshot(*original_snapshot)
+            # print('cp:',colocation_pattern,'time:',i,'a_ts:',a_ts)
+            print('cp:',colocation_pattern,'original num of colo:',dic[colocation_pattern],'time:',i,'mean:',np.mean(a_ts),'std:',np.std(a_ts))
+
+    if map.use_GUI(): tt.done()
+    
 
 if __name__=='__main__':
-    generate_data()
+    # generate_data()
+    compute_variance()
