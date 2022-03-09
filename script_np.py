@@ -240,12 +240,12 @@ class Map():
             self.textTurtle.color(*color)
             self.textTurtle.stamp()
             self.textTurtle.write(t)
-            self.textTurtle.fd(0.5*map_width/max(len(self.types),5))
+            self.textTurtle.fd(0.5*self.map_width/max(len(self.types),5))
         self.textTurtle.ht()
         tt.update()
     
     def update_GUI(self):
-        positions=map.iterate()
+        positions=self.iterate()
         if self.useGUI:
             tt.clear()
             for i,t in enumerate(positions.keys()):
@@ -255,24 +255,6 @@ class Map():
                     tt.goto(p[0],p[1])
                     tt.stamp()
             tt.update()
-
-    # idx of current active objects in the sub-region
-    # def compute_colocation(self, thres,rule,idx):
-    #     obj1,objs = rule
-    #     col_list = []
-    #     for obj in objs:
-    #         curr_dist = self.distances[(obj1,obj)]
-    #         select_dist = curr_dist[idx]
-    #         select_dist = (select_dist<thres).astype(int)
-    #         select_dist = select_dist.sum(axis=1)
-    #         select_dist = np.where(select_dist>0)[0]
-    #         col_list.append( select_dist )
-    #     final_col=[]
-    #     for i in range(len(col_list)):
-    #         # if i==len(col_list)-1: break
-    #         if i==0: final_col = col_list[0]
-    #         final_col = np.intersect1d(final_col,col_list[i])
-    #     return len(final_col)
 
     # thres is the max distance within a colocation
     # idx is a map from type to indices of objects in a window
@@ -344,9 +326,8 @@ class Map():
         
         return density_dict
 
-if __name__=='__main__':
+def generate_data():
     # Initialization of map
-
     map_width,map_height=900,750 # width and height of the map
     types=['A','B','C','D'] # types of objects
     populations={types[i]:v for i,v in enumerate([210,150,150,150])} # populations of different types
@@ -382,3 +363,10 @@ if __name__=='__main__':
         length=len(densities[fieldnames[0]])
         for i in range(length):
             writer.writerow({name:densities[name][i] for name in fieldnames})
+
+# compute variance of difference of colocation num at time t
+def compute_variance():
+    pass
+
+if __name__=='__main__':
+    generate_data()
