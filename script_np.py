@@ -370,8 +370,9 @@ def generate_data():
     #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
+    use_GUI=False # use GUI or not
 
-    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
+    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
     n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
