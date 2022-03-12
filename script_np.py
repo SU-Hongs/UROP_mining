@@ -396,46 +396,5 @@ def generate_data():
         for i in range(length):
             writer.writerow({name:densities[name][i] for name in fieldnames})
 
-# compute variance of difference of colocation num at time t
-def compute_variance():
-    # Initialization of map
-    map_width,map_height=900,750 # width and height of the map
-    types=['A','B','C','D'] # types of objects
-    populations={types[i]:v for i,v in enumerate([210,150,150,150])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([6,3,3,4])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.6])} # max accelerations of different types
-    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
-    n_iters=1000 # originally is 1000
-    timestamps=[100,200,300,400,500,600,700,800,900] # timestamps of interest
-    colocation_pattern=('C',('A','B')) # colocation pattern of interest
-    n_repeat=1000 # repetition to calculate variance of difference of oclocation num at time t
-
-    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
-    colo_key=tuple(sorted(list(map.flatten_rule(colocation_pattern))))
-    print(map.rules)
-    for rule in rules.keys():
-        type1,type2=rule
-        print('%s is attracted by %s'%(type1,type2))
-    map.init_GUI()
-    for i in tqdm(range(n_iters)):
-        map.update_GUI()
-        cur_density = map.compute_density(thres = 25,full_list=list(colo_key))
-        if i in timestamps:
-            original_snapshot=map.get_snapshot()
-            a_ts=[]
-            for j in range(n_repeat):
-                map.update_GUI()
-                next_density = map.compute_density(thres = 25,full_list=list(colo_key))
-                a_ts.append(next_density-cur_density)
-                map.load_snapshot(*original_snapshot)
-            print('cp:',colocation_pattern,'original num of colo:',cur_density,'time:',i,'mean:',np.mean(a_ts),'std:',np.std(a_ts))
-
-    if map.use_GUI(): tt.done()
-    
-
 if __name__=='__main__':
-    # generate_data()
-    compute_variance()
+    generate_data()
