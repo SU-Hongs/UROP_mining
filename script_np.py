@@ -374,7 +374,7 @@ def generate_data():
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
-    n_iters=1000 # originally is 1000
+    n_iters=10 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     densities={}
