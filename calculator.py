@@ -19,5 +19,11 @@ def pre_process(data,value_partition,names):
         if i==len(value_partition)-1: break
         lwb, upb = value_partition[i], value_partition[i+1]
         data.loc[(data['ParameterValue']<upb) & (data['ParameterValue']>=lwb),'type'] = names[i]
+    
+    #return 
     return data
+
+# given a list of dataframe of different chemicals, select the dates all of them have records
+def select_timestamp():
+    pass
 
