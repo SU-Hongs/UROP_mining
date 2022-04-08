@@ -361,7 +361,7 @@ class Map():
 
 def generate_data():
     # Initialization of map
-    map_width,map_height=900,750 # width and height of the map
+    map_width,map_height=1000,1000 # width and height of the map
     types=['A','B','C','D'] # types of objects
     populations={types[i]:v for i,v in enumerate([210,150,150,150])} # populations of different types
     max_speeds={types[i]:v for i,v in enumerate([6,3,3,4])} # max velocities of different types
@@ -369,11 +369,11 @@ def generate_data():
     rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     #rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([60,70,65])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.7,0.7,0.8])} # probabilities of attraction if within range
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5])} # probabilities of attraction if within range
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs)
     print(map.rules)
-    n_iters=1000 # originally is 1000
+    n_iters=3000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     densities={}

@@ -1,36 +1,23 @@
-from map import *
 import numpy as np
+import pandas as pd
 
-class Calculator:
-    def __init__(self):
-        pass
+# divide the data into groups by concentration
+# parameters: 
+# data -> input data (only 4 columns: date, latitude, longitude, concentration)
+# value_partition -> partition the data according to this list. 
+# ##Format: [a1,a2,a3,a4] <-> [a1,a2), [a2,a3), [a3,a4) ##
+# names -> a list of string containing the name of each partition
+# value_partition has length n+1 while names has length n
+def pre_process(data,value_partition,names):
+    data = data[['StateWellNumber','Date','LatitudeDD','LongitudeDD','ParameterValue']]
+    # eliminate null vales
+    data = data.dropna()
+    # if there are more than 1 record on the same day, take mean
+    data = data.groupby(["StateWellNumber","Date"]).mean()
+    data['type'] = np.nan
+    for i in range(len(value_partition)):
+        if i==len(value_partition)-1: break
+        lwb, upb = value_partition[i], value_partition[i+1]
+        data.loc[(data['ParameterValue']<upb) & (data['ParameterValue']>=lwb),'type'] = names[i]
+    return data
 
-    # calculating the modified PI
-    # the default distance threshold for determining colocation pattern 3x3
-    def compute_PI(self,map):
-        obj1,obj2 = map.select_objs()
-        count_A = 0
-        count_B = 0
-        # counting the number of objects A that are in a colocation
-        for obj in obj1:
-            for dx in range(-1,2):
-                for dy in range(-1,2):
-                    x_new = obj.getX()+dx
-                    y_new = obj.getY()+dy
-                    if map.check_occupy(x_new,y_new,obj2):
-                        count_A+=1
-
-        # counting the number of objects B that are in a colocation
-        for obj in obj2:
-            for dx in range(-1,2):
-                for dy in range(-1,2):
-                    x_new = obj.getX()+dx
-                    y_new = obj.getY()+dy
-                    if map.check_occupy(x_new,y_new,obj1):
-                        count_B+=1
-        Pr_A = count_A/len(obj1)
-        Pr_B = count_B/len(obj2)
-        PI = np.maximum(Pr_A,Pr_B)
-        return Pr_A, Pr_B, PI
-
-    
