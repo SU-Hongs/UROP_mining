@@ -15,13 +15,16 @@ def pre_process(data,value_partition,names):
     # if there are more than 1 record on the same day, take mean
     data = data.groupby(["StateWellNumber","Date"]).mean()
     data['type'] = np.nan
+    data_to_return = set()
     for i in range(len(value_partition)):
         if i==len(value_partition)-1: break
         lwb, upb = value_partition[i], value_partition[i+1]
         data.loc[(data['ParameterValue']<upb) & (data['ParameterValue']>=lwb),'type'] = names[i]
+        df = pd.DataFrame(data[data['type']==names[i]])
+        data_to_return.add(df)
     
     #return 
-    return data
+    return data_to_return
 
 # given a list of dataframe of different chemicals, select the dates all of them have records
 def select_timestamp():
