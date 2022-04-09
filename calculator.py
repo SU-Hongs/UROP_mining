@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from numpy import ndarray
+
 def date_to_int(date):
     dd, mm, year = date.split("/")
     if len(dd)==1: dd = '0'+dd
@@ -38,3 +40,60 @@ def pre_process(data,value_partition,names):
 def select_timestamp():
     pass
 
+
+def get_dict(arr:ndarray,key_idx:int):
+    '''
+    Given an n*k array A and key_idx K, return a map from key to (n-1)*k' ndarray,\\ 
+    where k' is the num of rows in A with the specified key.\\
+    The K-th column of A is the list of keys, which is used to construct the map.
+    '''
+    assert(len(arr.shape)==2)
+    _,ncols=arr.shape
+    if(key_idx<0): key_idx=ncols+key_idx
+    key_list=arr[:,key_idx]
+    data_arr=arr[:,[i for i in range(ncols) if i!=key_idx]]
+    keys=list(set(key_list))
+    dic={k:None for k in keys}
+    for k in dic:
+        dic[k]=data_arr[key_list==k]
+    return dic
+
+def get_colocations(dic:dict,colo_type:list,thres:float,curr_type=None,colo_arr=None):
+    '''
+    Given dic of data obtained by get_dict(), colocation type, and threshold,\\
+    return the n*d ndarray of colocations,\\
+    where n is num of colocations, and d is the length of colo_type.\\
+    curr_type of the colo_type for colo_arr, which can be used for recursion.\\
+    Note that curr_type can only be None or a prefix of colo_type.\\
+    Return None if no colocations are found.
+    '''
+    if curr_type==None: curr_type=list()
+    assert(str(colo_type).startswith(str(curr_type)[:-1]))
+    if len(colo_type)==len(curr_type): return colo_arr
+
+    type1 = colo_type[len(curr_type)] # new type of object
+    objs_t1=np.arange(len(dic[type1])) # indices of type1 objects
+    pos_t1=dic[type1] # get positions of type1 objects
+
+    # base case
+    if len(curr_type)==0: # add all objects of type1 within the window
+        curr_type.append(type1)
+        colo_arr=np.array(objs_t1).reshape(-1,1)
+        return get_colocations(dic,colo_type,thres,curr_type,colo_arr)
+    
+    # general case
+    mask=np.ones((len(colo_arr),len(objs_t1))) # mask[i,j] checks whether colo_arr[i] and objs_t1[j] form a colocation
+    for i,type2 in enumerate(curr_type):
+        objs_t2=colo_arr[:,i]
+        pos_t2=dic[type2][objs_t2] # get positions of type2 objects
+        # pairwise distances of shape = (# of type2) * (# of type1)
+        dists=np.sqrt(-2*pos_t2.dot(pos_t1.T)+np.sum(pos_t2**2,axis=1,keepdims=True)+np.sum(pos_t1**2,axis=1))
+        mask*=(dists<=thres) # check whether type1 and type2 has distance less than thres
+    curr_type.append(type1)
+    colo_arr=np.array(
+        [list(colo_arr[idx_colo])+[objs_t1[idx_t1]] 
+        for idx_colo,row in enumerate(mask) 
+            for idx_t1,val in enumerate(row) 
+                if val==True]) # generate new colo_arr for curr_type
+    if len(colo_arr)==0: return None # if empty, return None
+    return get_colocations(dic,colo_type,thres,curr_type,colo_arr)
