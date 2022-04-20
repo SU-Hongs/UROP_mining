@@ -97,3 +97,13 @@ def get_colocations(dic:dict,colo_type:list,thres:float,curr_type=None,colo_arr=
                 if val==True]) # generate new colo_arr for curr_type
     if len(colo_arr)==0: return None # if empty, return None
     return get_colocations(dic,colo_type,thres,curr_type,colo_arr)
+
+def get_part_index(dic:dict,colo_type:list,part_type:str,colo_arr:np.ndarray):
+    '''
+    Given dic of data obtained by get_dict(), colocation type, and participation type A,\\
+    return the participation index of A for the colocation type.\\
+    colo_arr is optional, and can be computed by get_colocations.\\
+    '''
+    if colo_arr==None:
+        colo_arr=get_colocations(dic,colo_type,)
+    return
