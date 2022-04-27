@@ -4,7 +4,7 @@ import pandas as pd
 from numpy import ndarray
 
 def date_to_int(date):
-    dd, mm, year = date.split("/")
+    mm, dd, year = date.split("/")
     if len(dd)==1: dd = '0'+dd
     if len(mm)==1: mm = '0'+mm
     int_date = int(year+mm+dd)
@@ -107,3 +107,30 @@ def get_part_index(dic:dict,colo_type:list,part_type,colo_arr:np.ndarray):
     assert(len(colo_arr.shape)==2)
     idx=colo_type.index(part_type)
     return len(set(colo_arr[:,idx].tolist()))/len(dic[part_type])
+
+def count_objs(df,date,type):
+    filt = df[(df['Date']==date)&(df['type']==type)]
+    return filt.shape[0]
+    
+
+# write a csv file out
+# input parameter: a dataframe df, a list of type called types, year you want to study (default=2002)
+def vectorize(df,types,year=2002):
+    df['year'] =  df['Date']/10000
+    df['year'] = df['year'].astype('int')
+    df = df[df['year']==year]
+    # make sure all the date in different df are the same!!
+    dates = df['Date'].unique()
+    
+    to_return = []
+    for date in dates:
+        # the return data structure is a list of T x 3 pandas dataframe
+        to_select = df[df['Date']==date]
+        type = to_select['type']
+        x = to_select['LongitudeDD']
+        y = to_select['LatitudeDD']
+        lists = list(zip(type,x,y))
+        cur_df = pd.DataFrame(lists,columns = ['type','x','y'])
+        to_return.append(cur_df)
+    return to_return
+
