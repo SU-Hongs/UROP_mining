@@ -115,12 +115,13 @@ def count_objs(df,date,type):
 
 # write a csv file out
 # input parameter: a dataframe df, a list of type called types, year you want to study (default=2002)
-def vectorize(df,types,year=2002):
+def vectorize(df,types,year=2002,dates = []):
     df['year'] =  df['Date']/10000
     df['year'] = df['year'].astype('int')
     df = df[df['year']==year]
     # make sure all the date in different df are the same!!
-    dates = df['Date'].unique()
+    if len(dates) ==0:
+        dates = df['Date'].unique()
     
     to_return = []
     for date in dates:
@@ -133,4 +134,11 @@ def vectorize(df,types,year=2002):
         cur_df = pd.DataFrame(lists,columns = ['type','x','y'])
         to_return.append(cur_df)
     return to_return
+
+def add_vectorization(vec1,vec2):
+    vec_sum = []
+    for i in range(len(vec1)):
+        df_to_add = vec1[i].append(vec2[i],ignore_index=True)
+        vec_sum.append(df_to_add)
+    return vec_sum
 
