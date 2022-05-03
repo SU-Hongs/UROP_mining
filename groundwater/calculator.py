@@ -98,15 +98,18 @@ def get_colocations(dic:dict,colo_type:list,thres:float,curr_type=None,colo_arr=
     if len(colo_arr)==0: return None # if empty, return None
     return get_colocations(dic,colo_type,thres,curr_type,colo_arr)
 
-def get_part_index(dic:dict,colo_type:list,part_type,colo_arr:np.ndarray):
+def get_part_ratio(dic:dict,colo_type:list,part_type,colo_arr:np.ndarray):
     '''
     Given dic of data obtained by get_dict(), colocation type, and participation type A,\\
     colo_arr computed by get_colocations,\\
-    return the participation index of A for the colocation type.\\
+    return the participation ratio of A for the colocation type.\\
     '''
     assert(len(colo_arr.shape)==2)
     idx=colo_type.index(part_type)
     return len(set(colo_arr[:,idx].tolist()))/len(dic[part_type])
+
+def get_modified_part_index(dic:dict,colo_type:list,colo_arr:np.ndarray):
+    return np.max([get_part_ratio(dic,colo_type,t,colo_arr) for t in colo_type])
 
 def count_objs(df,date,type):
     filt = df[(df['Date']==date)&(df['type']==type)]
