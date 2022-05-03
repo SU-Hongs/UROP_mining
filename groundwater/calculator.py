@@ -55,7 +55,7 @@ def get_dict(arr:ndarray,key_idx:int):
     keys=list(set(key_list))
     dic={k:None for k in keys}
     for k in dic:
-        dic[k]=data_arr[key_list==k]
+        dic[k]=data_arr[key_list==k].astype(float)
     return dic
 
 def get_colocations(dic:dict,colo_type:list,thres:float,curr_type=None,colo_arr=None):
