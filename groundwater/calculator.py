@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from statsmodels.tsa.stattools import *
+import statsmodels.api 
 
 from numpy import ndarray
 
@@ -10,14 +12,7 @@ def date_to_int(date):
     int_date = int(year+mm+dd)
     return int_date
 
-# divide the data into groups by concentration
-# parameters: 
-# data -> input data (only 4 columns: date, latitude, longitude, concentration)
-# value_partition -> partition the data according to this list. 
-# ##Format: [a1,a2,a3,a4] <-> [a1,a2), [a2,a3), [a3,a4) ##
-# names -> a list of string containing the name of each partition
-# value_partition has length n+1 while names has length n
-def pre_process(data,value_partition,names):
+def get_dates(data):
     data = data[['StateWellNumber','Date','LatitudeDD','LongitudeDD','ParameterValue']]
     # eliminate null vales
     data = data.dropna()
@@ -26,12 +21,51 @@ def pre_process(data,value_partition,names):
     data = data.reset_index()
     # change the date object into int with length 8 ##Format: yearmmdd##
     data['Date'] = data['Date'].apply(date_to_int)
-    data['type'] = np.nan
+    data  = data.sort_values("Date")
+    return data
+    
 
-    for i in range(len(value_partition)):
-        if i==len(value_partition)-1: break
-        lwb, upb = value_partition[i], value_partition[i+1]
-        data.loc[(data['ParameterValue']<upb) & (data['ParameterValue']>=lwb),'type'] = names[i]
+# divide the data into groups by concentration
+# parameters: 
+# data -> input data (only 4 columns: date, latitude, longitude, concentration)
+# value_partition -> partition the data according to this list. 
+# ##Format: [a1,a2,a3,a4] <-> [a1,a2), [a2,a3), [a3,a4) ##
+# names -> a list of string containing the name of each partition
+# value_partition has length n+1 while names has length n
+# def pre_process(data,value_partition,names):
+    # data = data[['StateWellNumber','Date','LatitudeDD','LongitudeDD','ParameterValue']]
+    # # eliminate null vales
+    # data = data.dropna()
+    # # if there are more than 1 record on the same day, take mean
+    # data = data.groupby(["StateWellNumber","Date"]).mean()
+    # data = data.reset_index()
+    # # change the date object into int with length 8 ##Format: yearmmdd##
+    # data['Date'] = data['Date'].apply(date_to_int)
+    # data['type'] = np.nan
+
+#     for i in range(len(value_partition)):
+#         if i==len(value_partition)-1: break
+#         lwb, upb = value_partition[i], value_partition[i+1]
+#         data.loc[(data['ParameterValue']<upb) & (data['ParameterValue']>=lwb),'type'] = names[i]
+#     # return the dataframe with Date in ascending order
+#     data  = data.sort_values("Date")
+#     return data
+
+# only eliminate 0 value
+def pre_process(data,names,thres=0):
+    data = data[['StateWellNumber','Date','LatitudeDD','LongitudeDD','ParameterValue']]
+    # eliminate null vales
+    data = data.dropna()
+    # if there are more than 1 record on the same day, take mean
+    data = data.groupby(["StateWellNumber","Date"]).mean()
+    data = data.reset_index()
+    # change the date object into int with length 8 ##Format: yearmmdd##
+    data['Date'] = data['Date'].apply(date_to_int)
+    data = data[data['ParameterValue']>thres]
+    data['type'] = np.nan
+    data.loc[ (data['ParameterValue']>thres),'type'] = names[0]
+
+    
     # return the dataframe with Date in ascending order
     data  = data.sort_values("Date")
     return data
@@ -104,6 +138,7 @@ def get_part_ratio(dic:dict,colo_type:list,part_type,colo_arr:np.ndarray):
     colo_arr computed by get_colocations,\\
     return the participation ratio of A for the colocation type.\\
     '''
+    if colo_arr is None: return 0
     assert(len(colo_arr.shape)==2)
     idx=colo_type.index(part_type)
     return len(set(colo_arr[:,idx].tolist()))/len(dic[part_type])
@@ -144,4 +179,15 @@ def add_vectorization(vec1,vec2):
         df_to_add = vec1[i].append(vec2[i],ignore_index=True)
         vec_sum.append(df_to_add)
     return vec_sum
+
+
+
+def select_time_lags(ts,thres=0.1):
+    pacf = statsmodels.tsa.stattools.pacf(ts)
+    for i in range(len(pacf)):
+        if abs(pacf[i])<=thres:
+            return i-1
+    return -1
+
+
 
