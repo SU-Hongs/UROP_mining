@@ -388,7 +388,7 @@ def generate_data():
         for key,val in dic.items():
             densities[key].append(val)
     if map.use_GUI(): tt.done()
-    with open('data.csv','w',newline='') as csvfile:
+    with open('simu_data.csv','w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
