@@ -362,14 +362,14 @@ class Map():
 def generate_data():
     # Initialization of map
     map_width,map_height=1000,1000 # width and height of the map
-    types=['A','B','C','D','E','F'] # types of objects
-    populations={types[i]:v for i,v in enumerate([100,100,100,100,100,100])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
-    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    rules={rule_list[i]:p for i,p in enumerate([50,50,50])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5])} # probabilities of attraction if within range
-    use_GUI=False # use GUI or not
+    types=['A','B','C','D','E','F','G','H'] # types of objects
+    populations={types[i]:v for i,v in enumerate([100,100,100,100,100,100,100,100])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C')),('E','F'),('F','G')] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([50,50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
+    use_GUI=True # use GUI or not
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
