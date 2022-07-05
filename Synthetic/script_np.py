@@ -359,21 +359,21 @@ class Map():
             idx_dict[t] = idx
         return self.compute_colocations(thres,idx_dict)
 
-def generate_data():
+def generate_data(path):
     # Initialization of map
     map_width,map_height=1000,1000 # width and height of the map
-    types=['A','B','C','D','E','F'] # types of objects
-    populations={types[i]:v for i,v in enumerate([100,100,100,100,100,100])} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
-    rule_list=[('A','B'),('C',('A','B')),('D',('A','B','C'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    rules={rule_list[i]:p for i,p in enumerate([50,50,50])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5])} # probabilities of attraction if within range
+    types=['A','B','C','D','E','F','G'] # types of objects
+    populations={types[i]:v for i,v in enumerate([100,100,100,100,100,100,100])} # populations of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
     use_GUI=False # use GUI or not
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
-    n_iters=3000 # originally is 1000
+    n_iters=500 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     densities={}
@@ -388,7 +388,7 @@ def generate_data():
         for key,val in dic.items():
             densities[key].append(val)
     if map.use_GUI(): tt.done()
-    with open('simu_data.csv','w',newline='') as csvfile:
+    with open(path,'w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -397,4 +397,6 @@ def generate_data():
             writer.writerow({name:densities[name][i] for name in fieldnames})
 
 if __name__=='__main__':
-    generate_data()
+    n_times=100
+    for i in range(1,n_times+1):
+        generate_data('data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
