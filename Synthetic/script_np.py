@@ -359,7 +359,7 @@ class Map():
             idx_dict[t] = idx
         return self.compute_colocations(thres,idx_dict)
 
-def generate_data():
+def generate_data(path):
     # Initialization of map
     map_width,map_height=1000,1000 # width and height of the map
     types=['A','B','C','D','E','F','G'] # types of objects
@@ -388,7 +388,7 @@ def generate_data():
         for key,val in dic.items():
             densities[key].append(val)
     if map.use_GUI(): tt.done()
-    with open('simu_data.csv','w',newline='') as csvfile:
+    with open(path,'w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -397,4 +397,6 @@ def generate_data():
             writer.writerow({name:densities[name][i] for name in fieldnames})
 
 if __name__=='__main__':
-    generate_data()
+    n_times=100
+    for i in range(1,n_times+1):
+        generate_data('data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
