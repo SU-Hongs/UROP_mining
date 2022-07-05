@@ -399,4 +399,4 @@ def generate_data(path):
 if __name__=='__main__':
     n_times=100
     for i in range(1,n_times+1):
-        generate_data('data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
+        generate_data('./data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
