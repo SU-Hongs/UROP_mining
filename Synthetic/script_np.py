@@ -363,7 +363,7 @@ def generate_data(path):
     # Initialization of map
     map_width,map_height=500,500 # width and height of the map
     types=['A','B','C','D','E','F','G'] # types of objects
-    mean,sd=200,40
+    mean,sd=50,10
     p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
     print(p_nums)
     populations={types[i]:v for i,v in enumerate(p_nums)} # populations of different types
@@ -372,7 +372,8 @@ def generate_data(path):
     rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
-    use_GUI=True # use GUI or not
+    use_GUI=False # use GUI or not
+    time_granularity=5 # freqency of computing num of colocations
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
@@ -386,10 +387,11 @@ def generate_data(path):
     map.init_GUI()
     for i in tqdm(range(n_iters)):
         map.update_GUI()
-        dic = map.compute_densities(thres = 25)
-        if(len(densities.keys())==0): densities.update({k:[] for k in dic})
-        for key,val in dic.items():
-            densities[key].append(val)
+        if i%time_granularity==0:
+            dic = map.compute_densities(thres = 25)
+            if(len(densities.keys())==0): densities.update({k:[] for k in dic})
+            for key,val in dic.items():
+                densities[key].append(val)
     if map.use_GUI(): tt.done()
     with open(path,'w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
