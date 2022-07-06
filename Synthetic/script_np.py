@@ -361,15 +361,18 @@ class Map():
 
 def generate_data(path):
     # Initialization of map
-    map_width,map_height=1000,1000 # width and height of the map
+    map_width,map_height=500,500 # width and height of the map
     types=['A','B','C','D','E','F','G'] # types of objects
-    populations={types[i]:v for i,v in enumerate([100,100,100,100,100,100,100])} # populations of different types
+    mean,sd=200,40
+    p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
+    print(p_nums)
+    populations={types[i]:v for i,v in enumerate(p_nums)} # populations of different types
     max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3,3])} # max velocities of different types
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
     rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
-    use_GUI=False # use GUI or not
+    use_GUI=True # use GUI or not
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
