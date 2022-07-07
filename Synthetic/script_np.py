@@ -363,7 +363,7 @@ def generate_data(path):
     # Initialization of map
     map_width,map_height=500,500 # width and height of the map
     types=['A','B','C','D','E','F','G'] # types of objects
-    mean,sd=50,10
+    mean,sd=100,10
     p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
     print(p_nums)
     populations={types[i]:v for i,v in enumerate(p_nums)} # populations of different types
@@ -371,13 +371,13 @@ def generate_data(path):
     max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
     rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8,0.8,0.8])} # probabilities of attraction if within range
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
     use_GUI=False # use GUI or not
     time_granularity=5 # freqency of computing num of colocations
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
     print(map.rules)
-    n_iters=500 # originally is 1000
+    n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
     densities={}
@@ -403,7 +403,7 @@ def generate_data(path):
 
 if __name__=='__main__':
     n_times=100
-    i=1
-    generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
-    # for i in range(1,n_times+1):
-    #     generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
+    
+    # generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
+    for i in range(1,n_times+1):
+        generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
