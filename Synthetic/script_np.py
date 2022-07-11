@@ -1,11 +1,12 @@
 import numpy as np
-from math import pi
+from math import pi, sqrt
 import turtle as tt
 import matplotlib.cm as cm
 from tqdm import tqdm
 import csv
 import copy
 import itertools
+import time
 
 class DistDict(dict):
     # Customized to avoid duplicated calculation of pairwise distances, like (A,B) and (B,A)...
@@ -20,7 +21,7 @@ class DistDict(dict):
         return super().__setitem__(new_key,val.T)
 
 class Map():
-    def __init__(self,map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,useGUI=False,eps=1e-7):
+    def __init__(self,map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,colo_thres,useGUI=False,eps=1e-7):
         self.map_width,self.map_height=map_width,map_height # width and height of the map
         self.types=types # types of objects
         self.populations=populations # populations of different types
@@ -28,14 +29,18 @@ class Map():
         self.max_accs=max_accs # max accelerations of different types
         self.rules=rules # rules of attraction
         self.rule_probs=rule_probs # probabilities of attraction if within range
+        self.colo_thres=colo_thres # threshold of distance for colocation
         self.positions=dict() # dict of arrays of different types of objects
         self.speeds=dict() # dict os arrays of different types of objects
         self.distances=DistDict() # dict of pairwise distances for all rules
         self.useGUI=useGUI # use GUI or not
         self.eps=eps # small number to avoid division by zero
-        self.window={'lb_x':int(self.map_width/4),
-            'lb_y':int(self.map_height/4),
-            'length':int(np.minimum(self.map_height,self.map_width)/2)} # window to compute colocation
+        area_factor=1/2
+        len_factor=sqrt(area_factor)
+        lb_factor=(1-len_factor)/2
+        self.window={'lb_x':int(self.map_width*lb_factor),
+            'lb_y':int(self.map_height*lb_factor),
+            'length':int(np.minimum(self.map_height,self.map_width)*len_factor)} # window to compute colocation
 
         self.init_objects()
         self.init_GUI()
@@ -109,7 +114,7 @@ class Map():
         num_type1=self.populations[type1]
 
         # get random index of type2 that attracts type1, return -1 if not exists 
-        attracted_indices=np.apply_along_axis(self.randomIndex,1,self.distances[rule]<=dist)
+        attracted_indices=np.apply_along_axis(self.randomIndex,1,(self.distances[rule]<=dist)*(self.distances[rule]>self.colo_thres))
 
         # if some type2 is within range, attracted with probability rule_probs[type1]
         attracted_mask=(attracted_indices!=-1)*(np.random.rand(num_type1)<self.rule_probs[rule])
@@ -135,7 +140,8 @@ class Map():
         num_type1=self.populations[type1]
 
         # get random index of type2 that attracts type1, return -1 if not exists 
-        attracted_indices=np.concatenate([np.apply_along_axis(self.randomIndex,1,self.distances[(type1,t)]<=dist).reshape(-1,1) for t in type2],axis=1)
+        attracted_indices=np.concatenate([np.apply_along_axis(self.randomIndex,1,
+            (self.distances[(type1,t)]<=dist)*(self.distances[(type1,t)]>self.colo_thres)).reshape(-1,1) for t in type2],axis=1)
         
         # if some type2 is within range, attracted with probability rule_probs[type1]
         attracted_mask=(~np.any(attracted_indices==-1,axis=1))&(np.random.rand(num_type1)<self.rule_probs[rule])
@@ -362,20 +368,21 @@ class Map():
 def generate_data(path):
     # Initialization of map
     map_width,map_height=500,500 # width and height of the map
-    types=['A','B','C','D','E','F','G'] # types of objects
+    types=['A','B','C'] # types of objects
     mean,sd=100,10
     p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
     print(p_nums)
     populations={types[i]:v for i,v in enumerate(p_nums)} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3,3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5,0.5,0.5,0.5])} # max accelerations of different types
-    rule_list=[('A','B'),('C',('A','B')),('D','E'),('F',('D','E'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
-    rules={rule_list[i]:p for i,p in enumerate([50,50,50,50])} # may attracted only if within the dist specified in the value of the rule
-    rule_probs={rule_list[i]:p for i,p in enumerate([0.5,0.5,0.5,0.5])} # probabilities of attraction if within range
-    use_GUI=False # use GUI or not
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
+    rule_list=[('A','B'),('C',('A','B'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
+    rules={rule_list[i]:p for i,p in enumerate([50,50])} # may attracted only if within the dist specified in the value of the rule
+    rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8])} # probabilities of attraction if within range
+    colo_thres=25 # threshold of distance for colocation
+    use_GUI=True # use GUI or not
     time_granularity=5 # freqency of computing num of colocations
 
-    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,use_GUI)
+    map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,colo_thres,use_GUI)
     print(map.rules)
     n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
@@ -388,10 +395,11 @@ def generate_data(path):
     for i in tqdm(range(n_iters)):
         map.update_GUI()
         if i%time_granularity==0:
-            dic = map.compute_densities(thres = 25)
+            dic = map.compute_densities(thres = colo_thres)
             if(len(densities.keys())==0): densities.update({k:[] for k in dic})
             for key,val in dic.items():
                 densities[key].append(val)
+        time.sleep(0.1)
     if map.use_GUI(): tt.done()
     with open(path,'w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
