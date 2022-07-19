@@ -302,13 +302,15 @@ class Map():
         return self.compute_colocation(thres,idx,full_list,curr_list,colo_list)
 
     # return a map from (T1,T2,...) to number of colocations
-    def compute_colocations(self,thres,idx):
+    def compute_colocations_mpi(self,thres,idx):
         colocations={} # map from colocation pattern to num of colocation
+        mpis={} # map from colocation pattern to modified participation index
         colo_lists={} # map from colcoation pattern to ndarray of colocation instances
         
         # base case
         for t in self.types:
             colocations[(t,)]=len(idx[t])
+            mpis[(t,)]=int(len(idx[t])!=0) # 1 if there exist objects of type t in window, else 0
             colo_lists[(t,)]=np.array(idx[t]).reshape(-1,1)
 
         # general case
@@ -318,6 +320,7 @@ class Map():
                 curr_list=full_list[:-1]
                 if tuple(curr_list) not in colo_lists: # no colocation for curr_list
                     colocations[tuple(full_list)]=0
+                    mpis[tuple(full_list)]=0 # 0 if no colocation in window
                     continue
                 colo_list=colo_lists[tuple(curr_list)] # there exists colocation for curr_list
 
@@ -337,11 +340,14 @@ class Map():
                     for idx_colo,row in enumerate(mask) 
                         for idx_t1,val in enumerate(row) 
                             if val==True]) # generate new colo_list for curr_list
-                if len(colo_list)==0: colocations[tuple(full_list)]=0
+                if len(colo_list)==0: 
+                    colocations[tuple(full_list)]=0
+                    mpis[tuple(full_list)]=0 # 0 if no colocation in window
                 else:
                     colocations[tuple(full_list)]=len(colo_list)
+                    mpis[tuple(full_list)]=max([len(set(colo_list[:,i]))/len(idx[t]) for i,t in enumerate(full_list)]) # modified PI
                     colo_lists[tuple(full_list)]=colo_list
-        return colocations
+        return colocations,mpis
 
     def compute_density(self,thres,full_list):
         lb_x,lb_y,length=self.window['lb_x'],self.window['lb_y'],self.window['length']
@@ -354,7 +360,7 @@ class Map():
 
     # a function to select the objects in the targeted sub-region
     # return a dictionary of the the colocation density of the colocation patterns 
-    def compute_densities(self, thres):
+    def compute_densities_mpi(self, thres):
         # first select the index of the objects that is in the range of the targeted subregion
         # define the left bottom corner of the sub-region and the length
         lb_x,lb_y,length=self.window['lb_x'],self.window['lb_y'],self.window['length']
@@ -363,9 +369,23 @@ class Map():
             x, y = self.positions[t][:,0], self.positions[t][:,1]
             idx = np.where((x>=lb_x) & (x<lb_x+length) & (y>=lb_y) & (y<lb_y+length))[0]
             idx_dict[t] = idx
-        return self.compute_colocations(thres,idx_dict)
+        return self.compute_colocations_mpi(thres,idx_dict)
 
-def generate_data(path):
+    # compute modified participation index
+    def compute_mpi(self):
+
+        pass
+
+def write_to_csv(fname,dic):
+    with open(fname,'w',newline='') as csvfile:
+        fieldnames = [k for k in dic.keys()]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        length=len(dic[fieldnames[0]])
+        for i in range(length):
+            writer.writerow({name:dic[name][i] for name in fieldnames})
+
+def generate_data(colo_path,mpi_path):
     # Initialization of map
     map_width,map_height=500,500 # width and height of the map
     types=['A','B','C'] # types of objects
@@ -380,14 +400,14 @@ def generate_data(path):
     rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8])} # probabilities of attraction if within range
     colo_thres=25 # threshold of distance for colocation
     use_GUI=False # use GUI or not
-    time_granularity=5 # freqency of computing num of colocations
+    time_granularity=1 # freqency of computing num of colocations
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,colo_thres,use_GUI)
     print(map.rules)
     n_iters=1000 # originally is 1000
     # suppose we want to study A ->(A,B) in this case
     # a list containing the density for chosen A for all iterations    
-    densities={}
+    densities,mpis={},{}
     for rule in rules.keys():
         type1,type2=rule
         print('%s is attracted by %s'%(type1,type2))
@@ -395,21 +415,19 @@ def generate_data(path):
     for i in tqdm(range(n_iters)):
         map.update_GUI()
         if i%time_granularity==0:
-            dic = map.compute_densities(thres = colo_thres)
-            if(len(densities.keys())==0): densities.update({''.join(k):[] for k in dic})
-            for key,val in dic.items():
-                densities[''.join(key)].append(val)
+            colo_nums,mparts = map.compute_densities_mpi(thres = colo_thres)
+            if(len(densities.keys())==0): 
+                densities.update({''.join(k):[] for k in colo_nums})
+                mpis.update({''.join(k):[] for k in mparts})
+            for key,val in colo_nums.items(): densities[''.join(key)].append(val)
+            for key,val in mparts.items(): mpis[''.join(key)].append(val)
     if map.use_GUI(): tt.done()
-    with open(path,'w',newline='') as csvfile:
-        fieldnames = [k for k in densities.keys()]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        length=len(densities[fieldnames[0]])
-        for i in range(length):
-            writer.writerow({name:densities[name][i] for name in fieldnames})
+    write_to_csv(colo_path,densities)
+    write_to_csv(mpi_path,mpis)
 
 if __name__=='__main__':
     n_times=100
     
     for i in range(1,n_times+1):
-        generate_data('data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
+        generate_data('data/%simu_colo.csv'%str(i).zfill(len(str(n_times))),
+            'data/%simu_mpi.csv'%str(i).zfill(len(str(n_times))))
