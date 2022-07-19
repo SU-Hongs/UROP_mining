@@ -379,7 +379,7 @@ def generate_data(path):
     rules={rule_list[i]:p for i,p in enumerate([50,50])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8])} # probabilities of attraction if within range
     colo_thres=25 # threshold of distance for colocation
-    use_GUI=True # use GUI or not
+    use_GUI=False # use GUI or not
     time_granularity=5 # freqency of computing num of colocations
 
     map=Map(map_width,map_height,types,populations,max_speeds,max_accs,rules,rule_probs,colo_thres,use_GUI)
@@ -399,7 +399,6 @@ def generate_data(path):
             if(len(densities.keys())==0): densities.update({k:[] for k in dic})
             for key,val in dic.items():
                 densities[key].append(val)
-        time.sleep(0.1)
     if map.use_GUI(): tt.done()
     with open(path,'w',newline='') as csvfile:
         fieldnames = [k for k in densities.keys()]
@@ -411,7 +410,7 @@ def generate_data(path):
 
 if __name__=='__main__':
     n_times=100
-    
+    # i=1
     # generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
     for i in range(1,n_times+1):
         generate_data('/Users/suhong/Desktop/UROP_Data/UROP/Synthetic/data/simu_data%s.csv'%str(i).zfill(len(str(n_times))))
