@@ -348,6 +348,12 @@ class Map():
                 else:
                     colocations[tuple(full_list)]=len(colo_list)
                     mpis[tuple(full_list)]=max([len(set(colo_list[:,i]))/len(idx[t]) for i,t in enumerate(full_list)]) # modified PI
+                    if len(full_list)>2: # calculate the participation ratios of all proper subsets
+                        for i in range(2,len(full_list)):
+                            for t in itertools.combinations(list(range(len(full_list))),i):
+                                mpis[tuple(full_list)]=max(mpis[tuple(full_list)],
+                                    len(set(map(tuple,colo_list[:,t])))/colocations[tuple(np.array(full_list)[list(t)])])
+                                    
                     colo_lists[tuple(full_list)]=colo_list
         return colocations,mpis
 
@@ -389,7 +395,7 @@ def write_to_csv(fname,dic):
 
 def generate_data(colo_path,mpi_path,useGUI):
     # Initialization of map
-    map_width,map_height=1000,1000 # width and height of the map
+    map_width,map_height=2000,2000 # width and height of the map
     types=['A','B','C','D'] # types of objects
     mean,sd=100,20
     p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
