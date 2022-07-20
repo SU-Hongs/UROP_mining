@@ -388,13 +388,13 @@ def write_to_csv(fname,dic):
 def generate_data(colo_path,mpi_path):
     # Initialization of map
     map_width,map_height=500,500 # width and height of the map
-    types=['A','B','C'] # types of objects
+    types=['A','B','C','D'] # types of objects
     mean,sd=100,10
     p_nums=list(np.round(np.maximum(np.random.randn(len(types))*sd+mean,0)).astype(int))
     print(p_nums)
     populations={types[i]:v for i,v in enumerate(p_nums)} # populations of different types
-    max_speeds={types[i]:v for i,v in enumerate([3,3,3])} # max velocities of different types
-    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5])} # max accelerations of different types
+    max_speeds={types[i]:v for i,v in enumerate([3,3,3,3])} # max velocities of different types
+    max_accs={types[i]:v for i,v in enumerate([0.5,0.5,0.5,0.5])} # max accelerations of different types
     rule_list=[('A','B'),('C',('A','B'))] # list of rules where the first is attracted by the second (e.g. (A,B) means A->B)
     rules={rule_list[i]:p for i,p in enumerate([50,50])} # may attracted only if within the dist specified in the value of the rule
     rule_probs={rule_list[i]:p for i,p in enumerate([0.8,0.8])} # probabilities of attraction if within range
@@ -429,5 +429,5 @@ if __name__=='__main__':
     n_times=100
     
     for i in range(1,n_times+1):
-        generate_data('data/%simu_colo.csv'%str(i).zfill(len(str(n_times))),
-            'data/%simu_mpi.csv'%str(i).zfill(len(str(n_times))))
+        generate_data('data/simu_colo%s.csv'%str(i).zfill(len(str(n_times))),
+            'data/simu_mpi%s.csv'%str(i).zfill(len(str(n_times))))
