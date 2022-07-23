@@ -2598,7 +2598,7 @@ StateWellNumber,County,AquiferCode,WellDepth,Date,Time,SampleNumber,EntityId,Lab
 6864903,Wilson,124CRRZ,3165,7/25/2006,1410,1,1,24,7,Analysis Balanced.  ,29.018333,-98.036389,1020,"BORON, DISSOLVED (UG/L AS B)",,446,ug/L,
 6864903,Wilson,124CRRZ,3165,8/2/2010,1500,1,1,23,7,Analysis Balanced.  Lab Calculated Anion/Cation Chg Bal set to TWDB Calculated Value due to an error in the lab calculated formula,29.018333,-98.036389,1020,"BORON, DISSOLVED (UG/L AS B)",,469,ug/L,
 6864903,Wilson,124CRRZ,3165,6/18/2014,945,1,1,23,7,Analysis Balanced.  Lab Calculated Anion/Cation Chg Bal set to TWDB Calculated Value due to an error in the lab calculated formula,29.018333,-98.036389,1020,"BORON, DISSOLVED (UG/L AS B)",,414,ug/L,
-7806302,Wilson,124CRRZ,2022,10/0/1953,0,1,3,2,4,Analysis Balanced.  Bull. 5710,28.964445,-98.255834,1020,"BORON, DISSOLVED (UG/L AS B)",,200,ug/L,
+7806302,Wilson,124CRRZ,2022,10/1/1953,0,1,3,2,4,Analysis Balanced.  Bull. 5710,28.964445,-98.255834,1020,"BORON, DISSOLVED (UG/L AS B)",,200,ug/L,
 7807501,Wilson,124CRRZ,3400,7/31/1973,0,1,1,1,3,Analysis Balanced.  800 gpm,28.919444,-98.168889,1020,"BORON, DISSOLVED (UG/L AS B)",,200,ug/L,
 7807501,Wilson,124CRRZ,3400,7/3/1974,0,1,1,1,3,Analysis Balanced.  ,28.919444,-98.168889,1020,"BORON, DISSOLVED (UG/L AS B)",,300,ug/L,
 3404401,Wood,124WLCX,410,6/11/1998,1100,1,1,23,7,Analysis Balanced.  ,32.926667,-95.607501,1020,"BORON, DISSOLVED (UG/L AS B)",,20,ug/L,
