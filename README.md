@@ -1,10 +1,9 @@
 # UROP
 ### Mining Causality from Colocation Patterns by Approximating Direct Causes from Granger Causes
 
+This repository includes
+- Implementation of our model
+- Codes for synthetic data generation
+- Experiments on real datasets
+- Implementation of related baseline models
 
-run "python script.py" in the terminal to visualize the interactions between different objects;
-
-run "python script_np.py" in the terminal to visualize the interactions between different objects.
-
-
-haha
